@@ -161,15 +161,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             {result.isDemo ? (
-              <span className="px-3.5 py-1 rounded-full bg-[#FAF0DE] border border-[#E8DAC2] text-xs font-bold text-[#805D26]">
+              <span className="px-3 py-1 rounded-xl bg-[#FAF0DE] border border-[#E8DAC2] text-xs font-semibold text-[#805D26]">
                 Demo Scenario
               </span>
             ) : (
-              <span className="px-3.5 py-1 rounded-full bg-[#E8F5E9] border border-[#C8E6C9] text-xs font-bold text-[#2E7D32]">
+              <span className="px-3 py-1 rounded-xl bg-[#E8F5E9] border border-[#C8E6C9] text-xs font-semibold text-[#2E7D32]">
                 Live Scan
               </span>
             )}
-            <span className="text-xs text-[#787163] font-semibold">
+            <span className="text-xs text-[#787163]">
               {new Date(result.createdAt).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
@@ -300,10 +300,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         <div className="lg:col-span-5 bg-[#FAF7F0] border border-[#E9DEC7] rounded-3xl p-7 sm:p-8 flex flex-col justify-between space-y-6 shadow-xs relative overflow-hidden">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold tracking-widest text-[#FA8F79] uppercase">
+              <span className="text-xs font-semibold text-[#8C5D50]">
                 Accessibility Score
               </span>
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#EFE8DC] text-[#635C4E]">
+              <span className="text-xs font-medium px-3 py-1 rounded-xl bg-[#EFE8DC] text-[#635C4E]">
                 {result.scoreLabel}
               </span>
             </div>
@@ -352,7 +352,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         <div className="lg:col-span-7 flex flex-col gap-4">
           {/* Highest Priority Recommendation Card */}
           <div className="bg-[#FAF4EB] border border-[#EADBCA] p-5 sm:p-6 rounded-3xl space-y-2 shadow-xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#D97706] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#D97706]">
               <Lightbulb className="w-4 h-4" />
               <span>Top Priority</span>
             </div>
@@ -365,14 +365,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 grow">
             {/* Strong Areas */}
             <div className="bg-[#F0FAF4] border border-[#D1EBD9] p-5 rounded-3xl space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#065F46] uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#065F46]">
                 <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                 <span>Strengths</span>
               </div>
               <ul className="space-y-2 text-xs sm:text-sm text-[#2A4D3B]">
                 {result.strongAreas.slice(0, 3).map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                    <span className="text-[#10B981] font-bold shrink-0">•</span>
+                    <span className="text-[#10B981] font-semibold select-none">–</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -381,14 +381,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
             {/* Areas Needing Attention */}
             <div className="bg-[#FEF6F5] border border-[#FCDAD6] p-5 rounded-3xl space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#991B1B] uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#991B1B]">
                 <AlertTriangle className="w-4 h-4 text-[#FA8F79]" />
                 <span>Areas to Fix</span>
               </div>
               <ul className="space-y-2 text-xs sm:text-sm text-[#6B2A2A]">
                 {result.areasNeedingAttention.slice(0, 3).map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                    <span className="text-[#FA8F79] font-bold shrink-0">•</span>
+                    <span className="text-[#FA8F79] font-semibold select-none">–</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -402,7 +402,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       <div className="bg-[#F6EFE3] border border-[#E2D6C0] p-5 sm:p-6 rounded-3xl text-sm text-[#453F34] leading-relaxed flex items-start gap-3.5 shadow-xs">
         <Info className="w-5 h-5 text-[#8A7F6C] shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold text-[#1A1C20] block mb-1">Perspective Summary:</span>
+          <span className="font-bold text-[#1A1C20] block mb-1">Perspective Summary</span>
           <p>{result.summary}</p>
         </div>
       </div>
@@ -411,14 +411,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       <div className="bg-[#FAF7F0] border border-[#E9DEC7] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <span className="text-xs font-bold tracking-widest text-[#FA8F79] uppercase">
-              Coordinates
-            </span>
             <h2 className="text-2xl font-bold font-heading text-[#1A1C20]">
               Barrier Map
             </h2>
           </div>
-          <span className="text-xs text-[#716A5E] bg-[#EFE8DC] px-3.5 py-1.5 rounded-full font-semibold">
+          <span className="text-xs text-[#716A5E] bg-[#EFE8DC] px-3.5 py-1.5 rounded-xl font-semibold">
             Select a pin to inspect
           </span>
         </div>
@@ -491,13 +488,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             <button
               key={finding.id}
               onClick={() => handleMarkerClick(finding.id)}
-              className={`text-xs px-3.5 py-2 rounded-2xl font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`text-xs px-3.5 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 cursor-pointer ${
                 selectedFindingId === finding.id
                   ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-sm ring-2 ring-[#FA8F79]'
                   : 'bg-[#EFE8DC] text-[#4F493D] hover:bg-[#E4DCCE]'
               }`}
             >
-              <span className="w-5 h-5 rounded-full bg-[#FA8F79] text-[#1A1C20] text-xs font-bold flex items-center justify-center">
+              <span className="w-5 h-5 rounded-lg bg-[#FA8F79] text-[#1A1C20] text-xs font-bold flex items-center justify-center">
                 {finding.id}
               </span>
               <span>{finding.title}</span>
@@ -510,9 +507,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-bold tracking-widest text-[#FA8F79] uppercase">
-              Action Plan
-            </span>
             <h2 className="text-2xl font-bold font-heading text-[#1A1C20]">
               Findings & Fixes
             </h2>
@@ -530,7 +524,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <button
                 key={lens}
                 onClick={() => setActiveLensFilter(lens)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeLensFilter === lens
                     ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-sm'
                     : 'bg-[#EFE8DC] text-[#544E41] hover:bg-[#E5DCCE]'
@@ -542,17 +536,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
 
           {/* Quick Expand / Collapse Actions */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto bg-[#EFE8DC] p-1 rounded-xl">
             <button
               onClick={handleExpandAll}
-              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-xl hover:bg-[#EFE8DC] transition-colors cursor-pointer"
+              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-lg hover:bg-[#FAF7F0] transition-colors cursor-pointer"
             >
               Expand All
             </button>
-            <span className="text-[#C5BBAA]">•</span>
             <button
               onClick={handleCollapseAll}
-              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-xl hover:bg-[#EFE8DC] transition-colors cursor-pointer"
+              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-lg hover:bg-[#FAF7F0] transition-colors cursor-pointer"
             >
               Collapse All
             </button>
@@ -590,19 +583,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       <h3 className="text-lg sm:text-xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
                         {finding.title}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-2.5 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
                         <span
-                          className={`text-xs font-semibold px-3 py-0.5 rounded-full border ${lensColor.bg} ${lensColor.text} ${lensColor.border}`}
+                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border ${lensColor.bg} ${lensColor.text} ${lensColor.border}`}
                         >
                           {finding.lens}
                         </span>
                         <span
-                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${severity.bg} ${severity.text}`}
+                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg ${severity.bg} ${severity.text}`}
                         >
-                          <span className={`w-2 h-2 rounded-full ${severity.dot}`}></span>
-                          <span>{severity.label}</span>
+                          {severity.label}
                         </span>
-                        <span className="text-xs text-[#857D6F]">
+                        <span className="text-xs text-[#857D6F] pl-1">
                           Confidence: {finding.confidence}
                         </span>
                       </div>
@@ -614,7 +606,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       type="button"
                       id={`speak-finding-${finding.id}`}
                       onClick={() => handleSpeakFinding(finding)}
-                      className={`p-2 rounded-2xl transition-all cursor-pointer ${
+                      className={`p-2 rounded-xl transition-all cursor-pointer ${
                         speechStatus.isSpeaking && speechStatus.currentFindingId === finding.id
                           ? 'bg-[#FA8F79] text-[#1A1C20] ring-2 ring-[#1A1C20]/20 shadow-xs'
                           : 'hover:bg-[#EFE7DC] text-[#6E6759] hover:text-[#1A1C20]'
@@ -636,7 +628,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleCardExpansion(finding.id)}
-                      className="p-2 rounded-2xl hover:bg-[#EFE7DC] text-[#6E6759] hover:text-[#1A1C20] transition-colors cursor-pointer"
+                      className="p-2 rounded-xl hover:bg-[#EFE7DC] text-[#6E6759] hover:text-[#1A1C20] transition-colors cursor-pointer"
                       aria-label={isExpanded ? 'Collapse' : 'Expand'}
                     >
                       {isExpanded ? (
@@ -655,7 +647,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* What Drishti Sees */}
                       <div className="bg-[#FAF2EB] border border-[#ECDBC9] p-5 rounded-2xl space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#A7412E] uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#A7412E]">
                           <Eye className="w-4 h-4" />
                           <span>Observation</span>
                         </div>
@@ -672,7 +664,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                       {/* How to Improve It */}
                       <div className="bg-[#F0FAF4] border border-[#CFEBD7] p-5 rounded-2xl space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#065F46] uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#065F46]">
                           <Lightbulb className="w-4 h-4 text-[#10B981]" />
                           <span>Improvement</span>
                         </div>
@@ -714,7 +706,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Ethical Disclaimer Card */}
       <div className="bg-[#FAF2E6] border border-[#E2D2B8] p-6 rounded-3xl space-y-2 text-center max-w-3xl mx-auto shadow-xs">
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#6E5528] uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#6E5528]">
           <ShieldCheck className="w-4 h-4 text-[#8C6F34]" />
           <span>Ethical AI Notice</span>
         </div>

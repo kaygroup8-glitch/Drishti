@@ -35,9 +35,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div className="space-y-1">
-          <span className="text-xs font-bold tracking-wider text-[#FA8F79] uppercase">
-            Library
-          </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-[#1A1C20] tracking-tight">
             Saved Scans
           </h1>

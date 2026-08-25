@@ -7,12 +7,13 @@ import {
   Check,
   AlertCircle,
   ArrowRight,
-  Zap
+  ImageIcon,
 } from 'lucide-react';
 import { LENSES } from '../utils/lensConfig';
 import { LensId, SampleScenario } from '../types';
 import { SAMPLE_SCENARIOS } from '../data/sampleScenarios';
 import { optimizeImageForAnalysis } from '../utils/imageOptimizer';
+import { AbstractCardGraphic, GraphicTheme } from './AbstractCardGraphic';
 
 interface UploadCardProps {
   onAnalyze: (imageData: { base64: string; mimeType: string; fileName: string; lenses: string[] }) => void;
@@ -54,7 +55,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
     setIsOptimizing(true);
 
     try {
-      // Smart fast client-side resizing down to max 1280px for instant analysis
+      // Fast client-side resizing down to max 1280px for instant analysis
       const optimized = await optimizeImageForAnalysis(file, 1280, 0.85);
       setFilePreview(optimized.base64);
       setMimeType(optimized.mimeType);
@@ -137,14 +138,11 @@ export const UploadCard: React.FC<UploadCardProps> = ({
     <div className="max-w-6xl mx-auto px-6 sm:px-12 space-y-10 pb-20">
       {/* Studio Header */}
       <div className="space-y-2 text-left max-w-3xl">
-        <span className="text-xs font-bold uppercase tracking-widest text-[#FA8F79]">
-          Drishti Studio
-        </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold font-heading text-[#1A1C20] tracking-tight">
           Accessibility Scan
         </h1>
         <p className="text-sm sm:text-base text-[#615A4D] leading-relaxed">
-          Upload any photo of an entrance, hallway, stairs, or public space to analyze accessibility barriers.
+          Upload any photo of an entrance, doorway, ramp, staircase, or corridor to analyze accessibility barriers.
         </p>
       </div>
 
@@ -168,12 +166,10 @@ export const UploadCard: React.FC<UploadCardProps> = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-3xl p-10 sm:p-14 text-center transition-all cursor-pointer min-h-[360px] flex flex-col items-center justify-center ${
-                isDragging
-                  ? 'border-[#FA8F79] bg-[#FFF5F2]'
-                  : 'border-[#DCD2C0] hover:border-[#FA8F79] bg-[#FAF7F0] hover:bg-[#FFFFFF]'
-              }`}
               onClick={() => fileInputRef.current?.click()}
+              className={`group relative overflow-hidden rounded-[28px] bg-[#FDF0EB] border border-[#F6DDD3] p-8 sm:p-10 flex flex-col justify-between min-h-[380px] shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer ${
+                isDragging ? 'border-[#FA8F79] bg-[#FFF5F2] ring-2 ring-[#FA8F79]/30' : ''
+              }`}
             >
               <input
                 ref={fileInputRef}
@@ -184,23 +180,25 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                 id="file-upload-input"
               />
 
-              <div className="max-w-md mx-auto space-y-5">
-                <div className="w-16 h-16 rounded-3xl bg-[#F2ECE1] text-[#FA8F79] mx-auto flex items-center justify-center shadow-xs">
-                  <Upload className="w-8 h-8" />
-                </div>
+              {/* Clean Top Tag */}
+              <div className="z-10 relative">
+                <span className="text-xs font-semibold text-[#8C5D50]">
+                  Photo Upload
+                </span>
+              </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="text-xl font-bold font-heading text-[#1A1C20]">
-                    Drop image or browse
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#787163]">
-                    JPG, PNG, or WEBP. Well-lit photos yield the best results.
-                  </p>
-                </div>
+              {/* Center Content */}
+              <div className="z-10 relative my-6 space-y-3">
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                  Drop image or browse
+                </h2>
+                <p className="text-xs sm:text-sm text-[#544D40] leading-relaxed max-w-[85%] sm:max-w-[78%]">
+                  Upload JPG, PNG, or WEBP. Well-lit photos of thresholds, ramps, stairs, and doors provide the highest accuracy.
+                </p>
 
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                  <span className="px-5 py-2.5 rounded-xl bg-[#1A1C20] text-[#FAF6EE] text-xs font-bold shadow-xs">
-                    Choose Photo
+                <div className="pt-3 flex flex-wrap items-center gap-3">
+                  <span className="px-5 py-2.5 rounded-xl bg-[#1A1C20] hover:bg-[#2C2E35] text-[#FAF6EE] text-xs font-bold shadow-xs transition-colors">
+                    {isOptimizing ? 'Preparing...' : 'Choose Photo'}
                   </span>
                   <button
                     type="button"
@@ -209,17 +207,41 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                       e.stopPropagation();
                       onOpenLiveCamera();
                     }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#EBE3D5] hover:bg-[#DFD6C6] text-[#3D382E] text-xs font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F7F3EB] text-[#1A1C20] text-xs font-bold transition-colors border border-[#E5DAC8] shadow-xs cursor-pointer"
                   >
                     <Camera className="w-4 h-4 text-[#FA8F79]" />
                     <span>Camera</span>
                   </button>
                 </div>
               </div>
+
+              {/* Bottom Action Hint */}
+              <div className="z-10 relative">
+                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                  <span>Browse device photos</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+                </span>
+              </div>
+
+              {/* Abstract Right-Side Geometric Shape */}
+              <AbstractCardGraphic theme="coral" />
             </div>
           ) : (
-            /* Selected Preview */
-            <div className="space-y-3 bg-[#FAF7F0] border border-[#E8DEC8] p-5 rounded-3xl shadow-xs">
+            /* Selected Preview Card */
+            <div className="relative overflow-hidden rounded-[28px] bg-[#FAF7F0] border border-[#E7DECD] p-6 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[#524C41]">
+                  Selected Photo
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-bold text-[#FA8F79] hover:underline cursor-pointer"
+                >
+                  Change photo
+                </button>
+              </div>
+
               <div className="relative rounded-2xl overflow-hidden bg-[#1A1C20] border border-[#DDD3BF] min-h-[320px] max-h-[440px] flex items-center justify-center">
                 <img
                   src={filePreview}
@@ -241,92 +263,95 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                   {fileName}
                 </div>
               </div>
-
-              <div className="flex justify-between items-center text-xs text-[#716A5E] px-2 pt-1">
-                <span>Ready for analysis</span>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-[#FA8F79] font-bold hover:underline cursor-pointer"
-                >
-                  Replace
-                </button>
-              </div>
             </div>
           )}
 
-          {/* Quick Sample Selector Bar */}
-          <div className="bg-[#FAF7F0] border border-[#E8DEC8] rounded-3xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#544F44]">
-                Or test a sample space:
+          {/* Quick Sample Selector Cards */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold tracking-wide text-[#665F51]">
+                Or select a sample space:
               </span>
-              <span className="text-xs text-[#8A8274] font-medium">Instant</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5">
-              {SAMPLE_SCENARIOS.map((sample) => (
-                <button
-                  key={sample.id}
-                  type="button"
-                  id={`quick-sample-${sample.id}`}
-                  onClick={() => onSelectSample(sample)}
-                  className="p-3 rounded-2xl bg-[#FFFFFF] hover:bg-[#FFF9F5] border border-[#E2D8C6] hover:border-[#FA8F79] text-left transition-all group cursor-pointer shadow-xs"
-                >
-                  <p className="text-xs font-bold text-[#1A1C20] group-hover:text-[#FA8F79] truncate">
-                    {sample.title}
-                  </p>
-                  <p className="text-[11px] text-[#787164] mt-0.5">
-                    Score: {sample.result.accessibilityScore}/100
-                  </p>
-                </button>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {SAMPLE_SCENARIOS.map((sample, idx) => {
+                const sampleThemes: GraphicTheme[] = ['coral', 'stone', 'sage'];
+                const sampleBgs = ['bg-[#FDF0EB] border-[#F6DDD3]', 'bg-[#F5F2EB] border-[#E7E0D2]', 'bg-[#EEF7F2] border-[#D9ECE1]'];
+                const currentTheme = sampleThemes[idx % sampleThemes.length];
+                const currentBg = sampleBgs[idx % sampleBgs.length];
+
+                return (
+                  <button
+                    key={sample.id}
+                    type="button"
+                    id={`quick-sample-${sample.id}`}
+                    onClick={() => onSelectSample(sample)}
+                    className={`group relative overflow-hidden rounded-2xl ${currentBg} border p-4 text-left transition-all hover:shadow-xs cursor-pointer flex flex-col justify-between min-h-[105px]`}
+                  >
+                    <div className="z-10 relative space-y-1">
+                      <span className="text-[11px] font-semibold text-[#8C8475]">
+                        {sample.category}
+                      </span>
+                      <p className="text-xs font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors truncate">
+                        {sample.title}
+                      </p>
+                    </div>
+
+                    <div className="z-10 relative pt-2 flex items-center justify-between text-[11px] font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                      <span>Score {sample.result.accessibilityScore}/100</span>
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+
+                    <AbstractCardGraphic theme={currentTheme} className="absolute -right-3 -bottom-3 w-24 h-24 opacity-60 pointer-events-none" />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* Right Column: Lens Settings & Trigger (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-[#FAF7F0] border border-[#E8DEC8] rounded-3xl p-7 sm:p-8 space-y-6 shadow-xs">
-            <div className="space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#FA8F79]">
-                Filters
+          <div className="group relative overflow-hidden rounded-[28px] bg-[#EEF7F2] border border-[#D9ECE1] p-7 sm:p-8 space-y-6 shadow-xs flex flex-col justify-between min-h-[380px]">
+            {/* Top Section */}
+            <div className="z-10 relative space-y-1">
+              <span className="text-xs font-semibold text-[#4D7C66]">
+                Configuration
               </span>
-              <h2 className="text-xl font-bold font-heading text-[#1A1C20]">
+              <h2 className="text-2xl font-bold font-heading text-[#1A1C20]">
                 Select Lenses
               </h2>
-              <p className="text-xs sm:text-sm text-[#6B6456]">
-                Pick specific lenses or analyze across all perspectives.
+              <p className="text-xs sm:text-sm text-[#544D40] leading-relaxed pt-1">
+                Choose specific accessibility perspectives or analyze across all 6 universal lenses.
               </p>
             </div>
 
             {/* Lens selection chips */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {LENSES.map((lens) => {
-                  const isSelected = selectedLenses.includes(lens.id);
-                  return (
-                    <button
-                      key={lens.id}
-                      type="button"
-                      id={`lens-pill-${lens.id}`}
-                      onClick={() => toggleLens(lens.id)}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs ring-2 ring-[#FA8F79]/30'
-                          : 'bg-[#FFFFFF] text-[#4F4A3F] border border-[#E2D7C5] hover:bg-[#F2ECE0]'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#FA8F79]" />}
-                      <span>{lens.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="z-10 relative flex flex-wrap gap-2">
+              {LENSES.map((lens) => {
+                const isSelected = selectedLenses.includes(lens.id);
+                return (
+                  <button
+                    key={lens.id}
+                    type="button"
+                    id={`lens-pill-${lens.id}`}
+                    onClick={() => toggleLens(lens.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
+                        : 'bg-[#FFFFFF]/90 hover:bg-[#FFFFFF] text-[#4F4A3F] border border-[#D1DFD6] hover:border-[#059669]'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#FA8F79]" />}
+                    <span>{lens.name}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Analysis Action Button */}
-            <div className="pt-4 border-t border-[#EBE1CF] space-y-3">
+            <div className="z-10 relative pt-4 border-t border-[#D9ECE1] space-y-3">
               <button
                 type="button"
                 id="reveal-barriers-btn"
@@ -334,19 +359,22 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                 onClick={handleSubmit}
                 className={`w-full py-4 rounded-2xl font-bold font-heading text-base flex items-center justify-center gap-3 transition-all shadow-md ${
                   filePreview && !isLoading
-                    ? 'bg-[#FA8F79] hover:bg-[#F9775E] text-[#1A1C20] cursor-pointer hover:shadow-lg active:scale-[0.99]'
-                    : 'bg-[#E3DAC8] text-[#8F8778] cursor-not-allowed'
+                    ? 'bg-[#1A1C20] hover:bg-[#2C2E35] text-[#FAF6EE] cursor-pointer hover:shadow-lg active:scale-[0.99]'
+                    : 'bg-[#DFEBE2] text-[#8F9F94] cursor-not-allowed'
                 }`}
               >
-                <ScanSearch className="w-5 h-5" />
+                <ScanSearch className="w-5 h-5 text-[#FA8F79]" />
                 <span>{isLoading ? 'Scanning with Gemini...' : 'Analyze Space'}</span>
-                {filePreview && !isLoading && <ArrowRight className="w-4 h-4" />}
+                {filePreview && !isLoading && <ArrowRight className="w-4 h-4 text-[#9CA3AF]" />}
               </button>
 
-              <p className="text-center text-[11px] text-[#857D6F]">
-                AI pinpoints obstacles and suggests practical improvements.
+              <p className="text-center text-[11px] text-[#5C6E63]">
+                AI pinpoints obstacles with precise coordinates and practical fixes.
               </p>
             </div>
+
+            {/* Abstract Right-Side Geometric Graphic */}
+            <AbstractCardGraphic theme="sage" />
           </div>
         </div>
       </div>

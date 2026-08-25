@@ -66,10 +66,9 @@ export const AnalysisLoader: React.FC<AnalysisLoaderProps> = ({ imagePreview }) 
 
         {/* Status Stage Text */}
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F2EAE0] text-xs font-bold text-[#4A453C]">
-            <span className="w-2 h-2 rounded-full bg-[#FA8F79] animate-ping"></span>
-            <span>Multimodal Vision Audit</span>
-          </div>
+          <span className="text-xs font-semibold text-[#8C5D50]">
+            Analyzing image
+          </span>
 
           <h2 className="text-xl sm:text-2xl font-bold font-heading text-[#1A1C20] tracking-tight">
             {currentStage.text}

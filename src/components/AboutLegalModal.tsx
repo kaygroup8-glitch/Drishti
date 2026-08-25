@@ -4,9 +4,7 @@ import {
   FileText,
   Lock,
   Eye,
-  ScanEye,
   CheckCircle2,
-  ExternalLink,
   ChevronRight
 } from 'lucide-react';
 
@@ -22,9 +20,6 @@ export const AboutLegalModal: React.FC<AboutLegalModalProps> = ({ onStartAnalysi
       {/* Header Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-b border-[#E8DEC8] pb-4">
         <div>
-          <span className="text-xs font-bold tracking-wider text-[#FA8F79] uppercase">
-            Overview
-          </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-[#1A1C20] tracking-tight">
             About & Legal
           </h1>
@@ -92,7 +87,7 @@ export const AboutLegalModal: React.FC<AboutLegalModalProps> = ({ onStartAnalysi
             </p>
 
             <div className="p-4 rounded-2xl bg-[#FAF0E1] border border-[#E6D4BA] space-y-1">
-              <span className="text-xs font-bold text-[#8C6120] uppercase tracking-wider">
+              <span className="text-xs font-semibold text-[#8C6120]">
                 Core Motto
               </span>
               <p className="text-lg font-bold font-heading text-[#1A1C20]">
@@ -101,31 +96,9 @@ export const AboutLegalModal: React.FC<AboutLegalModalProps> = ({ onStartAnalysi
             </div>
           </div>
 
-          {/* Hackathon Affiliation */}
-          <div className="bg-[#F0F7FA] border border-[#CCE2ED] rounded-3xl p-6 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#1E5675]">
-                <ScanEye className="w-4 h-4 text-[#0284C7]" />
-                <span>Google AI Workshop Hackathon</span>
-              </div>
-              <a
-                href="https://google-ai-workshop-hackathon.devpost.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-bold text-[#0284C7] hover:underline inline-flex items-center gap-1"
-              >
-                <span>Devpost</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-            <p className="text-xs text-[#335669] leading-relaxed">
-              Built with Gemini multimodal vision models via server-side Google GenAI SDK to empower universal design and accessibility awareness.
-            </p>
-          </div>
-
           {/* Ethical AI Framing Card */}
           <div className="bg-[#FAF4EB] border border-[#ECDCC7] rounded-3xl p-7 sm:p-9 space-y-4 shadow-xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#9A621E] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#9A621E]">
               <Shield className="w-4 h-4" />
               <span>Ethical AI Principles</span>
             </div>
