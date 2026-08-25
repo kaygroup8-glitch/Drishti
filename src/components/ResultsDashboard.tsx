@@ -44,13 +44,33 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   );
   const [activeLensFilter, setActiveLensFilter] = useState<string>('All');
   const [copiedLink, setCopiedLink] = useState(false);
-  const [expandedCardId, setExpandedCardId] = useState<number | null>(
-    result.findings.length > 0 ? result.findings[0].id : null
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<number>>(
+    () => new Set(result.findings.map((f) => f.id))
   );
   const [isExporting, setIsExporting] = useState(false);
   const [speechStatus, setSpeechStatus] = useState(narrator.getStatus());
 
   const findingRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  const toggleCardExpansion = (id: number) => {
+    setExpandedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    setExpandedCardIds(new Set(result.findings.map((f) => f.id)));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedCardIds(new Set());
+  };
 
   useEffect(() => {
     const unsubscribe = narrator.subscribe(() => {
@@ -96,7 +116,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const handleMarkerClick = (id: number) => {
     setSelectedFindingId(id);
-    setExpandedCardId(id);
+    setExpandedCardIds((prev) => new Set(prev).add(id));
     const el = findingRefs.current[id];
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -502,28 +522,48 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </span>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap gap-2">
-          {availableLenses.map((lens) => (
+        {/* Filter & Controls Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-2">
+            {availableLenses.map((lens) => (
+              <button
+                key={lens}
+                onClick={() => setActiveLensFilter(lens)}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                  activeLensFilter === lens
+                    ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-sm'
+                    : 'bg-[#EFE8DC] text-[#544E41] hover:bg-[#E5DCCE]'
+                }`}
+              >
+                {lens}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Expand / Collapse Actions */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
-              key={lens}
-              onClick={() => setActiveLensFilter(lens)}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                activeLensFilter === lens
-                  ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-sm'
-                  : 'bg-[#EFE8DC] text-[#544E41] hover:bg-[#E5DCCE]'
-              }`}
+              onClick={handleExpandAll}
+              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-xl hover:bg-[#EFE8DC] transition-colors cursor-pointer"
             >
-              {lens}
+              Expand All
             </button>
-          ))}
+            <span className="text-[#C5BBAA]">•</span>
+            <button
+              onClick={handleCollapseAll}
+              className="text-xs font-bold text-[#6E6759] hover:text-[#1A1C20] px-3 py-1.5 rounded-xl hover:bg-[#EFE8DC] transition-colors cursor-pointer"
+            >
+              Collapse All
+            </button>
+          </div>
         </div>
 
         {/* Finding Cards */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {filteredFindings.map((finding) => {
             const isSelected = selectedFindingId === finding.id;
-            const isExpanded = expandedCardId === finding.id;
+            const isExpanded = expandedCardIds.has(finding.id);
             const severity = getSeverityStyle(finding.severity);
             const lensColor = getLensColor(finding.lens);
 
@@ -531,20 +571,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <div
                 key={finding.id}
                 ref={(el) => (findingRefs.current[finding.id] = el)}
-                className={`bg-[#FAF7F0] border rounded-3xl p-6 sm:p-7 transition-all shadow-xs space-y-5 ${
+                className={`bg-[#FAF7F0] border rounded-3xl p-5 sm:p-6 transition-all shadow-xs space-y-4 ${
                   isSelected
                     ? 'border-[#FA8F79] ring-2 ring-[#FA8F79]/30 bg-[#FFFDF9]'
                     : 'border-[#E7DDC8] hover:border-[#D8CCA]'
                 }`}
               >
-                {/* Finding Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Finding Header (Clickable anywhere to expand/collapse) */}
+                <div
+                  onClick={() => toggleCardExpansion(finding.id)}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none group"
+                >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-[#1A1C20] text-[#FAF6EE] flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                    <div className="w-10 h-10 rounded-2xl bg-[#1A1C20] text-[#FAF6EE] flex items-center justify-center font-bold text-base shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                       {finding.id}
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-xl font-bold font-heading text-[#1A1C20]">
+                      <h3 className="text-lg sm:text-xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
                         {finding.title}
                       </h3>
                       <div className="flex flex-wrap items-center gap-2.5 mt-1">
@@ -566,7 +609,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 self-end sm:self-center">
+                  <div className="flex items-center gap-1.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       id={`speak-finding-${finding.id}`}
@@ -591,8 +634,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </button>
 
                     <button
-                      onClick={() => setExpandedCardId(isExpanded ? null : finding.id)}
-                      className="p-2 rounded-2xl hover:bg-[#EFE7DC] text-[#6E6759] transition-colors cursor-pointer"
+                      type="button"
+                      onClick={() => toggleCardExpansion(finding.id)}
+                      className="p-2 rounded-2xl hover:bg-[#EFE7DC] text-[#6E6759] hover:text-[#1A1C20] transition-colors cursor-pointer"
                       aria-label={isExpanded ? 'Collapse' : 'Expand'}
                     >
                       {isExpanded ? (
@@ -604,59 +648,64 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* Perspective Insight Split */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* What Drishti Sees */}
-                  <div className="bg-[#FAF2EB] border border-[#ECDBC9] p-5 rounded-2xl space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#A7412E] uppercase tracking-wider">
-                      <Eye className="w-4 h-4" />
-                      <span>Observation</span>
-                    </div>
-                    <p className="text-sm text-[#473B32] leading-relaxed">
-                      {finding.whatDetected}
-                    </p>
-                    {finding.whyItMatters && (
-                      <div className="pt-2 text-xs text-[#7A6455] italic border-t border-[#ECDBC9]/60">
-                        <span className="font-semibold not-italic">Impact: </span>
-                        {finding.whyItMatters}
+                {/* Collapsible Card Details */}
+                {isExpanded && (
+                  <div className="space-y-4 pt-2 border-t border-[#EAE1D1]">
+                    {/* Perspective Insight Split */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* What Drishti Sees */}
+                      <div className="bg-[#FAF2EB] border border-[#ECDBC9] p-5 rounded-2xl space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#A7412E] uppercase tracking-wider">
+                          <Eye className="w-4 h-4" />
+                          <span>Observation</span>
+                        </div>
+                        <p className="text-sm text-[#473B32] leading-relaxed">
+                          {finding.whatDetected}
+                        </p>
+                        {finding.whyItMatters && (
+                          <div className="pt-2 text-xs text-[#7A6455] italic border-t border-[#ECDBC9]/60">
+                            <span className="font-semibold not-italic">Impact: </span>
+                            {finding.whyItMatters}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* How to Improve It */}
-                  <div className="bg-[#F0FAF4] border border-[#CFEBD7] p-5 rounded-2xl space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#065F46] uppercase tracking-wider">
-                      <Lightbulb className="w-4 h-4 text-[#10B981]" />
-                      <span>Improvement</span>
-                    </div>
-                    <p className="text-sm text-[#274B37] font-semibold leading-relaxed">
-                      {finding.suggestedImprovement}
-                    </p>
-                    {finding.evidenceAssessment && (
-                      <div className="pt-2 text-xs text-[#4E755D] border-t border-[#CFEBD7]/60">
-                        <span className="font-semibold">Evidence: </span>
-                        {finding.evidenceAssessment}
+                      {/* How to Improve It */}
+                      <div className="bg-[#F0FAF4] border border-[#CFEBD7] p-5 rounded-2xl space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#065F46] uppercase tracking-wider">
+                          <Lightbulb className="w-4 h-4 text-[#10B981]" />
+                          <span>Improvement</span>
+                        </div>
+                        <p className="text-sm text-[#274B37] font-semibold leading-relaxed">
+                          {finding.suggestedImprovement}
+                        </p>
+                        {finding.evidenceAssessment && (
+                          <div className="pt-2 text-xs text-[#4E755D] border-t border-[#CFEBD7]/60">
+                            <span className="font-semibold">Evidence: </span>
+                            {finding.evidenceAssessment}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Location Marker Link */}
-                <div className="flex items-center justify-between text-xs text-[#7A7365] pt-1">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-[#FA8F79]" />
-                    <span>Location: {finding.location.label}</span>
+                    {/* Location Marker Link */}
+                    <div className="flex items-center justify-between text-xs text-[#7A7365] pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-[#FA8F79]" />
+                        <span>Location: {finding.location.label}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedFindingId(finding.id);
+                          window.scrollTo({ top: 380, behavior: 'smooth' });
+                        }}
+                        className="text-[#FA8F79] hover:underline font-bold cursor-pointer"
+                      >
+                        View pin ↑
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedFindingId(finding.id);
-                      window.scrollTo({ top: 380, behavior: 'smooth' });
-                    }}
-                    className="text-[#FA8F79] hover:underline font-bold cursor-pointer"
-                  >
-                    View pin ↑
-                  </button>
-                </div>
+                )}
               </div>
             );
           })}
