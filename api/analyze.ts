@@ -182,7 +182,7 @@ CRITICAL ETHICAL FRAMING:
 
 Evaluate the image across the requested lenses: ${lensesText}.`;
 
-    const modelCandidates = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.7-flash'];
+    const modelCandidates = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.0-flash'];
     let lastError: any = null;
     let responseText: string | null = null;
 

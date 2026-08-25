@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ScanSearch,
   Bookmark,
@@ -15,11 +15,16 @@ import {
   Share2,
   Info,
   FileDown,
-  Loader2
+  Loader2,
+  Volume2,
+  VolumeX,
+  Pause,
+  Play
 } from 'lucide-react';
 import { AnalysisResult, Finding } from '../types';
 import { getLensColor, getSeverityStyle } from '../utils/lensConfig';
 import { exportAnalysisToPDF } from '../utils/pdfExport';
+import { narrator } from '../utils/speechNarrator';
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
@@ -43,8 +48,41 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     result.findings.length > 0 ? result.findings[0].id : null
   );
   const [isExporting, setIsExporting] = useState(false);
+  const [speechStatus, setSpeechStatus] = useState(narrator.getStatus());
 
   const findingRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  useEffect(() => {
+    const unsubscribe = narrator.subscribe(() => {
+      setSpeechStatus(narrator.getStatus());
+    });
+    return () => {
+      narrator.stop();
+      unsubscribe();
+    };
+  }, []);
+
+  const handleToggleFullSpeech = () => {
+    if (speechStatus.isSpeaking && !speechStatus.isPaused) {
+      narrator.pause();
+    } else if (speechStatus.isPaused) {
+      narrator.resume();
+    } else {
+      narrator.speakFullAudit(result);
+    }
+  };
+
+  const handleStopSpeech = () => {
+    narrator.stop();
+  };
+
+  const handleSpeakFinding = (finding: Finding) => {
+    if (speechStatus.isSpeaking && speechStatus.currentFindingId === finding.id) {
+      narrator.stop();
+    } else {
+      narrator.speakFinding(finding);
+    }
+  };
 
   const availableLenses = [
     'All',
@@ -125,22 +163,70 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Audio Narration Toggle */}
+          <div className="flex items-center rounded-2xl bg-[#EFE8DC] p-1 border border-[#E0D5C3]">
+            <button
+              id="listen-audit-btn"
+              onClick={handleToggleFullSpeech}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                speechStatus.isSpeaking && !speechStatus.isPaused
+                  ? 'bg-[#FA8F79] text-[#1A1C20] shadow-xs'
+                  : 'hover:bg-[#E4DCCE] text-[#423C32]'
+              }`}
+              title={speechStatus.isSpeaking ? (speechStatus.isPaused ? 'Resume Audio' : 'Pause Audio') : 'Listen to Full Audit Report'}
+            >
+              {speechStatus.isSpeaking && !speechStatus.isPaused ? (
+                <>
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>Pause Voice</span>
+                  {/* Subtle pulsing soundwave */}
+                  <span className="flex items-center gap-0.5 ml-1">
+                    <span className="w-1 h-3 bg-[#1A1C20] rounded-full animate-bounce"></span>
+                    <span className="w-1 h-4 bg-[#1A1C20] rounded-full animate-bounce [animation-delay:0.15s]"></span>
+                    <span className="w-1 h-2 bg-[#1A1C20] rounded-full animate-bounce [animation-delay:0.3s]"></span>
+                  </span>
+                </>
+              ) : speechStatus.isPaused ? (
+                <>
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Resume Voice</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 text-[#FA8F79]" />
+                  <span>Listen to Audit</span>
+                </>
+              )}
+            </button>
+
+            {speechStatus.isSpeaking && (
+              <button
+                onClick={handleStopSpeech}
+                className="p-1.5 rounded-xl hover:bg-[#E4DCCE] text-[#787163] hover:text-[#1A1C20] transition-colors cursor-pointer ml-0.5"
+                title="Stop Audio"
+                aria-label="Stop Audio"
+              >
+                <VolumeX className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             id="export-pdf-btn"
             onClick={handleExportPDF}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#EFE8DC] hover:bg-[#E4DCCE] text-[#423C32] text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#EFE8DC] hover:bg-[#E4DCCE] text-[#423C32] text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             title="Download PDF Audit Report"
           >
             {isExporting ? (
               <>
-                <Loader2 className="w-4 h-4 text-[#FA8F79] animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 text-[#FA8F79] animate-spin" />
                 <span>Exporting...</span>
               </>
             ) : (
               <>
-                <FileDown className="w-4 h-4 text-[#FA8F79]" />
+                <FileDown className="w-3.5 h-3.5 text-[#FA8F79]" />
                 <span>Export PDF</span>
               </>
             )}
@@ -149,29 +235,29 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <button
             id="share-analysis-btn"
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#EFE8DC] hover:bg-[#E4DCCE] text-[#423C32] text-xs font-bold transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#EFE8DC] hover:bg-[#E4DCCE] text-[#423C32] text-xs font-bold transition-colors cursor-pointer"
           >
-            <Share2 className="w-4 h-4 text-[#756E61]" />
+            <Share2 className="w-3.5 h-3.5 text-[#756E61]" />
             <span>{copiedLink ? 'Copied!' : 'Share'}</span>
           </button>
 
           <button
             id="save-analysis-btn"
             onClick={() => onSave(result)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
               isSaved
                 ? 'bg-[#1A1C20] text-[#FAF6EE]'
-                : 'bg-[#FA8F79] hover:bg-[#F9775E] text-[#1A1C20] shadow-sm'
+                : 'bg-[#FA8F79] hover:bg-[#F9775E] text-[#1A1C20] shadow-xs'
             }`}
           >
             {isSaved ? (
               <>
-                <BookmarkCheck className="w-4 h-4 text-[#34D399]" />
+                <BookmarkCheck className="w-3.5 h-3.5 text-[#34D399]" />
                 <span>Saved</span>
               </>
             ) : (
               <>
-                <Bookmark className="w-4 h-4" />
+                <Bookmark className="w-3.5 h-3.5" />
                 <span>Save</span>
               </>
             )}
@@ -180,9 +266,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <button
             id="new-analysis-btn"
             onClick={onReset}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#1A1C20] hover:bg-[#2F323A] text-[#FAF6EE] text-xs font-bold transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#1A1C20] hover:bg-[#2F323A] text-[#FAF6EE] text-xs font-bold transition-colors cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
             <span>New Scan</span>
           </button>
         </div>
@@ -480,17 +566,42 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setExpandedCardId(isExpanded ? null : finding.id)}
-                    className="self-end sm:self-center p-2 rounded-2xl hover:bg-[#EFE7DC] text-[#6E6759] transition-colors cursor-pointer"
-                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5 self-end sm:self-center">
+                    <button
+                      type="button"
+                      id={`speak-finding-${finding.id}`}
+                      onClick={() => handleSpeakFinding(finding)}
+                      className={`p-2 rounded-2xl transition-all cursor-pointer ${
+                        speechStatus.isSpeaking && speechStatus.currentFindingId === finding.id
+                          ? 'bg-[#FA8F79] text-[#1A1C20] ring-2 ring-[#1A1C20]/20 shadow-xs'
+                          : 'hover:bg-[#EFE7DC] text-[#6E6759] hover:text-[#1A1C20]'
+                      }`}
+                      title={
+                        speechStatus.isSpeaking && speechStatus.currentFindingId === finding.id
+                          ? 'Stop reading this finding'
+                          : 'Read this finding aloud'
+                      }
+                      aria-label={`Read finding ${finding.id} aloud`}
+                    >
+                      {speechStatus.isSpeaking && speechStatus.currentFindingId === finding.id ? (
+                        <VolumeX className="w-4 h-4" />
+                      ) : (
+                        <Volume2 className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setExpandedCardId(isExpanded ? null : finding.id)}
+                      className="p-2 rounded-2xl hover:bg-[#EFE7DC] text-[#6E6759] transition-colors cursor-pointer"
+                      aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Perspective Insight Split */}

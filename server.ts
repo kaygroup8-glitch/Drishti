@@ -187,8 +187,8 @@ CRITICAL ETHICAL FRAMING:
 
 Evaluate the image across the requested lenses: ${lensesText}.`;
 
-    // Multi-model resilience: if one model experiences high demand (e.g. 503), try stable alternates
-    const modelCandidates = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.7-flash'];
+    // Multi-model resilience: try primary and stable alternates with auto-retry
+    const modelCandidates = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.0-flash'];
     let lastError: any = null;
     let responseText: string | null = null;
 
