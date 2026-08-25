@@ -1,0 +1,6 @@
+{
+  "name": "Drishti",
+  "description": "AI Accessibility Lens that helps people discover accessibility barriers across multiple perspectives.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
