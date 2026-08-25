@@ -68,8 +68,24 @@ export default function App() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Drishti couldn't complete the analysis. Please try again.");
+        let errMsg = "Drishti couldn't complete the analysis. Please check your Gemini API key in Vercel settings and try again.";
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await res.json();
+            if (errorData.error) errMsg = errorData.error;
+          } else {
+            const textData = await res.text();
+            if (textData.includes('413') || textData.toLowerCase().includes('payload too large')) {
+              errMsg = 'The image file size is too large. Please upload an image under 8MB.';
+            } else if (textData.includes('404')) {
+              errMsg = 'API route not found. Please sync the latest commit to Vercel.';
+            }
+          }
+        } catch {
+          // ignore parse error
+        }
+        throw new Error(errMsg);
       }
 
       const result: AnalysisResult = await res.json();
