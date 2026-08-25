@@ -6,11 +6,13 @@ import {
   X,
   Check,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 import { LENSES } from '../utils/lensConfig';
 import { LensId, SampleScenario } from '../types';
 import { SAMPLE_SCENARIOS } from '../data/sampleScenarios';
+import { optimizeImageForAnalysis } from '../utils/imageOptimizer';
 
 interface UploadCardProps {
   onAnalyze: (imageData: { base64: string; mimeType: string; fileName: string; lenses: string[] }) => void;
@@ -32,6 +34,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
   const [mimeType, setMimeType] = useState<string>('image/jpeg');
   const [selectedLenses, setSelectedLenses] = useState<LensId[]>(['all']);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,21 +44,31 @@ export const UploadCard: React.FC<UploadCardProps> = ({
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file (JPG, PNG, or WEBP).');
       return;
     }
 
     setFileName(file.name);
-    setMimeType(file.type || 'image/jpeg');
+    setIsOptimizing(true);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setFilePreview(result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Smart fast client-side resizing down to max 1280px for instant analysis
+      const optimized = await optimizeImageForAnalysis(file, 1280, 0.85);
+      setFilePreview(optimized.base64);
+      setMimeType(optimized.mimeType);
+    } catch (err) {
+      console.warn('Image optimization fallback:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFilePreview(reader.result as string);
+        setMimeType(file.type || 'image/jpeg');
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
