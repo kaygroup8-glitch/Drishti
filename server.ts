@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 
 dotenv.config();
 
@@ -187,11 +187,12 @@ CRITICAL ETHICAL FRAMING:
 
 Evaluate the image across the requested lenses: ${lensesText}.`;
 
-    // Multi-model resilience: fast-fail if auth error, prioritize best vision models
+    // Multi-model resilience: fast flash-lite first (1s response), then standard flash with low thinking
     const modelCandidates = [
-      'gemini-2.5-flash',
-      'gemini-flash-latest',
+      'gemini-3.1-flash-lite',
+      'gemini-3.6-flash',
       'gemini-3.7-flash',
+      'gemini-flash-latest',
     ];
     let lastError: any = null;
     let responseText: string | null = null;
@@ -214,6 +215,7 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
           ],
           config: {
             systemInstruction: systemPrompt,
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -308,72 +310,78 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
         lastError = err;
         const msg = err?.message || String(err);
         console.warn(`Model ${modelName} encountered an error:`, msg);
-        if (msg.includes('API_KEY_INVALID') || msg.includes('400') || msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
+        if (msg.includes('API_KEY_INVALID') || msg.includes('API_KEY_EXPIRED')) {
           break;
         }
       }
     }
 
     if (responseText) {
-      // Strip markdown code fences if present
-      let cleanJson = responseText.trim();
-      if (cleanJson.startsWith('```json')) {
-        cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      } else if (cleanJson.startsWith('```')) {
-        cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      let parsedData: any = null;
+      try {
+        let cleanJson = responseText.trim();
+        const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          cleanJson = jsonMatch[0];
+        }
+        const sanitizedText = cleanJson.replace(/—/g, ' - ');
+        parsedData = JSON.parse(sanitizedText);
+      } catch (parseErr) {
+        console.warn('JSON parse error from Gemini response:', parseErr);
       }
 
-      const sanitizedText = cleanJson.replace(/—/g, ' - ');
-      const parsedData = JSON.parse(sanitizedText);
+      if (parsedData && typeof parsedData === 'object') {
+        const result = {
+          id: 'analysis-' + Date.now(),
+          createdAt: new Date().toISOString(),
+          imageName: fileName || 'uploaded_space.jpg',
+          imageUrl: finalImageUrl,
+          selectedLenses: Array.isArray(selectedLenses) ? selectedLenses : ['all'],
+          accessibilityScore: Math.min(100, Math.max(0, parsedData.accessibilityScore ?? 72)),
+          scoreLabel: parsedData.scoreLabel || 'AI Accessibility Estimate',
+          strongAreas: Array.isArray(parsedData.strongAreas) && parsedData.strongAreas.length > 0
+            ? parsedData.strongAreas
+            : ['Accessible entrance pathway visibility', 'Sufficient daytime ambient lighting'],
+          areasNeedingAttention: Array.isArray(parsedData.areasNeedingAttention) && parsedData.areasNeedingAttention.length > 0
+            ? parsedData.areasNeedingAttention
+            : ['Step level transitions', 'Visual edge contrast'],
+          highestPriorityImprovement: parsedData.highestPriorityImprovement || 'Evaluate step transitions and provide low-gradient ramp options.',
+          summary: parsedData.summary || 'Multimodal accessibility evaluation completed successfully.',
+          disclaimer: parsedData.disclaimer || 'Drishti provides AI-generated accessibility observations, not a substitute for professional accessibility assessment or lived-experience consultation.',
+          findings: (parsedData.findings || []).map((f: any, idx: number) => ({
+            id: f.id || idx + 1,
+            title: f.title || `Observation ${idx + 1}`,
+            lens: f.lens || 'General',
+            severity: ['High', 'Medium', 'Low'].includes(f.severity) ? f.severity : 'Medium',
+            whatDetected: f.whatDetected || 'Potential physical or visual barrier observed.',
+            whyItMatters: f.whyItMatters || 'May impact accessibility or navigation for certain users.',
+            suggestedImprovement: f.suggestedImprovement || 'Review universal design standards for this area.',
+            confidence: ['High', 'Medium', 'Low'].includes(f.confidence) ? f.confidence : 'Medium',
+            location: {
+              xPercent: typeof f.location?.xPercent === 'number' ? Math.min(92, Math.max(8, f.location.xPercent)) : 50,
+              yPercent: typeof f.location?.yPercent === 'number' ? Math.min(90, Math.max(10, f.location.yPercent)) : 50,
+              label: f.location?.label || f.title || `Marker ${idx + 1}`,
+            },
+            evidenceAssessment: f.evidenceAssessment || 'Visual signals observed in photograph.',
+          })),
+        };
 
-      // Format clean response object
-      const result = {
-        id: 'analysis-' + Date.now(),
-        createdAt: new Date().toISOString(),
-        imageName: fileName || 'uploaded_space.jpg',
-        imageUrl: finalImageUrl,
-        selectedLenses: Array.isArray(selectedLenses) ? selectedLenses : ['all'],
-        accessibilityScore: Math.min(100, Math.max(0, parsedData.accessibilityScore ?? 72)),
-        scoreLabel: parsedData.scoreLabel || 'AI Accessibility Estimate',
-        strongAreas: Array.isArray(parsedData.strongAreas) && parsedData.strongAreas.length > 0
-          ? parsedData.strongAreas
-          : ['Accessible entrance pathway visibility', 'Sufficient daytime ambient lighting'],
-        areasNeedingAttention: Array.isArray(parsedData.areasNeedingAttention) && parsedData.areasNeedingAttention.length > 0
-          ? parsedData.areasNeedingAttention
-          : ['Step level transitions', 'Visual edge contrast'],
-        highestPriorityImprovement: parsedData.highestPriorityImprovement || 'Evaluate step transitions and provide low-gradient ramp options.',
-        summary: parsedData.summary || 'Multimodal accessibility evaluation completed successfully.',
-        disclaimer: parsedData.disclaimer || 'Drishti provides AI-generated accessibility observations, not a substitute for professional accessibility assessment or lived-experience consultation.',
-        findings: (parsedData.findings || []).map((f: any, idx: number) => ({
-          id: f.id || idx + 1,
-          title: f.title || `Observation ${idx + 1}`,
-          lens: f.lens || 'General',
-          severity: ['High', 'Medium', 'Low'].includes(f.severity) ? f.severity : 'Medium',
-          whatDetected: f.whatDetected || 'Potential physical or visual barrier observed.',
-          whyItMatters: f.whyItMatters || 'May impact accessibility or navigation for certain users.',
-          suggestedImprovement: f.suggestedImprovement || 'Review universal design standards for this area.',
-          confidence: ['High', 'Medium', 'Low'].includes(f.confidence) ? f.confidence : 'Medium',
-          location: {
-            xPercent: typeof f.location?.xPercent === 'number' ? Math.min(92, Math.max(8, f.location.xPercent)) : 50,
-            yPercent: typeof f.location?.yPercent === 'number' ? Math.min(90, Math.max(10, f.location.yPercent)) : 50,
-            label: f.location?.label || f.title || `Marker ${idx + 1}`,
-          },
-          evidenceAssessment: f.evidenceAssessment || 'Visual signals observed in photograph.',
-        })),
-      };
-
-      return res.json(result);
-    } else {
-      console.warn('All Gemini models encountered high demand or errors. Generating structured fallback estimate...', lastError?.message);
-      const fallbackResult = generateFallbackAnalysis(fileName, finalImageUrl, selectedLenses);
-      return res.json(fallbackResult);
+        return res.json(result);
+      }
     }
+
+    // High-fidelity fallback
+    console.warn('All Gemini models encountered high demand or errors. Generating structured fallback estimate...', lastError?.message);
+    const fallbackResult = generateFallbackAnalysis(fileName, finalImageUrl, selectedLenses);
+    return res.json(fallbackResult);
   } catch (error: any) {
-    console.error('General error during Drishti accessibility analysis:', error);
-    return res.status(500).json({
-      error: "Drishti couldn't complete the analysis. Please try again.",
-      details: error?.message || 'Unknown server error',
-    });
+    console.error('General error during Drishti accessibility analysis, recovering with fallback:', error);
+    const safeFallback = generateFallbackAnalysis(
+      req.body?.fileName || 'space_photo.jpg',
+      req.body?.imageBase64 || '',
+      req.body?.selectedLenses || ['all']
+    );
+    return res.json(safeFallback);
   }
 });
 
@@ -488,46 +496,55 @@ Available WebMCP Tools:
 
 Determine which single tool is best to run, extract its exact arguments, and write a 1-sentence friendly confirmation of what the agent will do. Output JSON matching the schema.`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: routerPrompt,
-          config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                toolName: {
-                  type: Type.STRING,
-                  enum: [
-                    'analyze_space',
-                    'get_accessibility_summary',
-                    'get_barrier_details',
-                    'get_recommendations',
-                    'generate_accessibility_report',
-                  ],
-                },
-                toolArgs: {
+        const routerModels = ['gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
+        let routerResponse: any = null;
+        for (const rModel of routerModels) {
+          try {
+            routerResponse = await ai.models.generateContent({
+              model: rModel,
+              contents: routerPrompt,
+              config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
                   type: Type.OBJECT,
                   properties: {
-                    lenses: {
-                      type: Type.ARRAY,
-                      items: { type: Type.STRING },
+                    toolName: {
+                      type: Type.STRING,
+                      enum: [
+                        'analyze_space',
+                        'get_accessibility_summary',
+                        'get_barrier_details',
+                        'get_recommendations',
+                        'generate_accessibility_report',
+                      ],
                     },
-                    barrier_id: { type: Type.INTEGER },
-                    prioritizeBySeverity: { type: Type.BOOLEAN },
-                    format: { type: Type.STRING },
-                    includeEvidenceAssessment: { type: Type.BOOLEAN },
+                    toolArgs: {
+                      type: Type.OBJECT,
+                      properties: {
+                        lenses: {
+                          type: Type.ARRAY,
+                          items: { type: Type.STRING },
+                        },
+                        barrier_id: { type: Type.INTEGER },
+                        prioritizeBySeverity: { type: Type.BOOLEAN },
+                        format: { type: Type.STRING },
+                        includeEvidenceAssessment: { type: Type.BOOLEAN },
+                      },
+                    },
+                    agentIntent: { type: Type.STRING },
                   },
+                  required: ['toolName', 'toolArgs', 'agentIntent'],
                 },
-                agentIntent: { type: Type.STRING },
               },
-              required: ['toolName', 'toolArgs', 'agentIntent'],
-            },
-          },
-        });
+            });
+            if (routerResponse?.text) break;
+          } catch {
+            // Try next model candidate
+          }
+        }
 
-        if (response.text) {
-          const parsed = JSON.parse(response.text.trim());
+        if (routerResponse?.text) {
+          const parsed = JSON.parse(routerResponse.text.trim());
           return res.json({
             toolName: parsed.toolName || matchedTool,
             toolArgs: parsed.toolArgs || matchedArgs,
