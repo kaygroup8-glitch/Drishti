@@ -171,25 +171,52 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
         payloadType = 'error';
         payloadData = { error: errorEncountered, toolName };
       } else if (toolName === 'analyze_space') {
-        responseText = `I executed \`analyze_space\` using Gemini multimodal vision. The space received an accessibility score of ${toolOutput.accessibilityScore}/100 with ${toolOutput.totalFindings} observations identified.`;
-        payloadType = 'analysis';
+        if (toolOutput.status === 'success') {
+          const score = toolOutput.accessibilityScore ?? 0;
+          const label = toolOutput.scoreLabel ? ` (${toolOutput.scoreLabel})` : '';
+          const findingsCount = toolOutput.totalFindings ?? toolOutput.findings?.length ?? 0;
+          responseText = `I executed \`analyze_space\` using Gemini multimodal vision. The space received an accessibility score of ${score}/100${label} with ${findingsCount} observations identified.`;
+          payloadType = 'analysis';
+        } else {
+          responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';
+          payloadType = 'summary';
+        }
       } else if (toolName === 'get_barrier_details') {
-        if (toolOutput.status === 'found') {
+        if (toolOutput.status === 'found' && toolOutput.barrier) {
           const b = toolOutput.barrier;
           responseText = `Here are the deep-dive details for Barrier #${b.id} (${b.title}): Identified under the ${b.lens} lens with ${b.severity} severity.`;
           payloadType = 'barrier';
         } else {
-          responseText = toolOutput.message || 'Barrier details could not be found.';
+          responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';
           payloadType = 'summary';
         }
       } else if (toolName === 'get_recommendations') {
-        responseText = `I retrieved the prioritized remediation roadmap. Here are the most impactful physical and visual modifications to improve accessibility:`;
-        payloadType = 'recommendations';
+        if (toolOutput.hasActiveAnalysis) {
+          const recCount = toolOutput.totalRecommendations ?? toolOutput.recommendations?.length ?? 0;
+          responseText = `I retrieved the prioritized remediation roadmap (${recCount} actions). Here are the most impactful physical and visual modifications to improve accessibility:`;
+          payloadType = 'recommendations';
+        } else {
+          responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';
+          payloadType = 'summary';
+        }
       } else if (toolName === 'generate_accessibility_report') {
-        responseText = `I generated the accessibility audit report for "${toolOutput.spaceTitle || 'Active Space'}". The PDF report document has been prepared for download.`;
-        payloadType = 'report';
+        if (toolOutput.status === 'generated') {
+          responseText = `I generated the accessibility audit report for "${toolOutput.spaceTitle || 'Active Space'}". The PDF report document has been prepared for download.`;
+          payloadType = 'report';
+        } else {
+          responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';
+          payloadType = 'summary';
+        }
       } else {
-        responseText = `Here is the current accessibility overview: The space has an estimated score of ${toolOutput.accessibilityScore}/100 (${toolOutput.scoreLabel}).`;
+        // get_accessibility_summary or general summary
+        if (toolOutput?.hasActiveAnalysis && (toolOutput.accessibilityScore !== undefined || toolOutput.overallScore !== undefined)) {
+          const score = toolOutput.accessibilityScore ?? toolOutput.overallScore ?? 0;
+          const label = toolOutput.scoreLabel ? ` (${toolOutput.scoreLabel})` : '';
+          const totalFindings = toolOutput.totalFindingsCount ?? toolOutput.findings?.length ?? 0;
+          responseText = `Here is the current accessibility overview for "${toolOutput.imageName || 'this space'}": The space has an estimated score of ${score}/100${label} with ${totalFindings} observations identified.`;
+        } else {
+          responseText = toolOutput?.message || 'No accessibility audit has been run yet. Please analyze a space first.';
+        }
         payloadType = 'summary';
       }
 
@@ -489,6 +516,49 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
               </p>
 
               {/* STRUCTURED PAYLOAD WIDGETS */}
+              {msg.payload && msg.payload.type === 'summary' && msg.payload.data && msg.payload.data.hasActiveAnalysis && (
+                <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E3D8C7] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#6B6355]">
+                      {msg.payload.data.imageName || 'Accessibility Scorecard'}
+                    </span>
+                    <span className="text-xs font-bold text-[#1A1C20] bg-[#FAF4EB] px-2.5 py-1 rounded-lg border border-[#ECDCC7]">
+                      Score: {msg.payload.data.accessibilityScore ?? msg.payload.data.overallScore ?? 0}/100
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-semibold">
+                    <span className="px-2 py-0.5 rounded-md bg-[#FEF2F2] text-[#991B1B] border border-[#FCA5A5]">
+                      {msg.payload.data.highPriorityCount ?? 0} High Priority
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#FFFBEB] text-[#92400E] border border-[#FCD34D]">
+                      {msg.payload.data.mediumPriorityCount ?? 0} Medium Priority
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]">
+                      {msg.payload.data.lowPriorityCount ?? 0} Low Priority
+                    </span>
+                  </div>
+
+                  {(msg.payload.data.highestPriorityImprovement || msg.payload.data.topRecommendedImprovement) && (
+                    <p className="text-xs text-[#524B3F] leading-relaxed bg-[#FAF6EE] p-2.5 rounded-xl border border-[#EAE2D5]">
+                      <strong>Top Recommended Fix:</strong>{' '}
+                      {msg.payload.data.highestPriorityImprovement || msg.payload.data.topRecommendedImprovement}
+                    </p>
+                  )}
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={onOpenStudio}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1A1C20] text-[#FAF6EE] text-xs font-bold hover:bg-[#2C2E35] transition-colors cursor-pointer"
+                    >
+                      <ScanEye className="w-3.5 h-3.5 text-[#FA8F79]" />
+                      <span>View Full Studio Dashboard</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {msg.payload && msg.payload.type === 'analysis' && (
                 <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E3D8C7] space-y-3">
                   <div className="flex items-center justify-between">
@@ -561,12 +631,12 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[#6B6355]">Remediation Priorities</span>
                     <span className="text-xs font-mono font-semibold text-[#166534] bg-[#F0FDF4] px-2 py-0.5 rounded-md">
-                      {msg.payload.data.totalRecommendations || msg.payload.data.recommendations?.length || 0} Actions
+                      {msg.payload.data.totalRecommendations || (msg.payload.data.recommendations || msg.payload.data.prioritizedRecommendations || []).length} Actions
                     </span>
                   </div>
 
                   <div className="space-y-2">
-                    {(msg.payload.data.recommendations || []).slice(0, 3).map((rec: any, idx: number) => (
+                    {(msg.payload.data.recommendations || msg.payload.data.prioritizedRecommendations || []).slice(0, 3).map((rec: any, idx: number) => (
                       <div
                         key={idx}
                         className="p-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAE2D5] space-y-1 text-xs"
@@ -579,7 +649,7 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
                             {rec.severity}
                           </span>
                         </div>
-                        <p className="text-[#524B3F]">{rec.recommendation}</p>
+                        <p className="text-[#524B3F]">{rec.recommendation || rec.recommendedFix || rec.suggestedImprovement}</p>
                       </div>
                     ))}
                   </div>

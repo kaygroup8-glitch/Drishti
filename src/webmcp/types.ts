@@ -116,6 +116,7 @@ export interface AnalyzeSpaceOutput {
 export interface AccessibilitySummaryOutput {
   hasActiveAnalysis: boolean;
   imageName?: string;
+  accessibilityScore?: number;
   overallScore?: number;
   scoreLabel?: string;
   totalFindingsCount?: number;
@@ -128,9 +129,26 @@ export interface AccessibilitySummaryOutput {
     lens: string;
     locationLabel: string;
   }>;
+  findings?: Array<{
+    id: number;
+    title: string;
+    lens: string;
+    severity: string;
+    whatDetected: string;
+    whyItMatters: string;
+    suggestedImprovement: string;
+    confidence: string;
+    location: {
+      xPercent: number;
+      yPercent: number;
+      label: string;
+    };
+  }>;
+  selectedLenses?: string[];
   strongAreas?: string[];
   areasNeedingAttention?: string[];
   topRecommendedImprovement?: string;
+  highestPriorityImprovement?: string;
   summary?: string;
   message?: string;
 }
@@ -169,9 +187,25 @@ export interface BarrierDetailsOutput {
  */
 export interface RecommendationsOutput {
   hasActiveAnalysis: boolean;
+  accessibilityScore?: number;
   overallScore?: number;
+  scoreLabel?: string;
   highestPriorityAction?: string;
+  highestPriorityImprovement?: string;
   totalRecommendations?: number;
+  recommendations?: Array<{
+    id: number;
+    barrierId: number;
+    title: string;
+    lens: string;
+    severity: string;
+    recommendation: string;
+    recommendedFix: string;
+    suggestedImprovement: string;
+    whyItMatters: string;
+    locationLabel: string;
+    confidence: string;
+  }>;
   prioritizedRecommendations?: Array<{
     priorityRank: number;
     barrierId: number;
@@ -179,6 +213,7 @@ export interface RecommendationsOutput {
     lens: string;
     severity: string;
     recommendedFix: string;
+    suggestedImprovement: string;
     whyItMatters: string;
     locationLabel: string;
     confidence: string;

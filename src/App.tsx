@@ -33,6 +33,11 @@ export default function App() {
     currentResultRef.current = currentResult;
   }, [currentResult]);
 
+  const updateCurrentResult = (result: AnalysisResult | null) => {
+    currentResultRef.current = result;
+    setCurrentResult(result);
+  };
+
   // Load history from localStorage on initial render
   useEffect(() => {
     try {
@@ -100,7 +105,7 @@ export default function App() {
       }
 
       const result: AnalysisResult = await res.json();
-      setCurrentResult(result);
+      updateCurrentResult(result);
 
       // Automatically add to history
       setHistory((prev) => {
@@ -129,7 +134,7 @@ export default function App() {
     const unregister = initializeWebMCP({
       getCurrentResult: () => currentResultRef.current,
       setCurrentResult: (result) => {
-        setCurrentResult(result);
+        updateCurrentResult(result);
       },
       triggerAnalysis: async (imageData) => {
         return await handleAnalyze(imageData);
@@ -148,7 +153,7 @@ export default function App() {
   }, []);
 
   const handleSelectSample = (scenario: SampleScenario) => {
-    setCurrentResult(scenario.result);
+    updateCurrentResult(scenario.result);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -224,7 +229,7 @@ export default function App() {
               <ResultsDashboard
                 result={currentResult}
                 onReset={() => {
-                  setCurrentResult(null);
+                  updateCurrentResult(null);
                   setErrorMessage(null);
                 }}
                 onSave={handleSaveResult}
@@ -258,12 +263,12 @@ export default function App() {
             }}
             onSelectSample={handleSelectSample}
             onOpenUpload={() => {
-              setCurrentResult(null);
+              updateCurrentResult(null);
               setActiveTab('analyze');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onOpenAgentInfo={() => setIsAgentModalOpen(true)}
-            onClearSpace={() => setCurrentResult(null)}
+            onClearSpace={() => updateCurrentResult(null)}
           />
         )}
 
@@ -272,13 +277,13 @@ export default function App() {
           <HistoryView
             history={history}
             onSelectResult={(selected) => {
-              setCurrentResult(selected);
+              updateCurrentResult(selected);
               setActiveTab('analyze');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onClearHistory={handleClearHistory}
             onStartNew={() => {
-              setCurrentResult(null);
+              updateCurrentResult(null);
               setActiveTab('analyze');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -289,7 +294,7 @@ export default function App() {
         {activeTab === 'about' && (
           <AboutLegalModal
             onStartAnalysis={() => {
-              setCurrentResult(null);
+              updateCurrentResult(null);
               setActiveTab('analyze');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}

@@ -22,7 +22,7 @@ export function createReportTool(bridge: WebMCPAppBridge): WebMCPToolDefinition<
       if (!current) {
         return {
           status: 'failed',
-          message: 'Cannot generate PDF report: No active space analysis is currently loaded in Drishti. Run "analyze_space" first.',
+          message: 'No accessibility audit has been run yet. Please analyze a space first.',
         };
       }
 

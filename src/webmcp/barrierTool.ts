@@ -29,7 +29,7 @@ export function createBarrierTool(bridge: WebMCPAppBridge): WebMCPToolDefinition
       if (!current) {
         return {
           status: 'no_active_scan',
-          message: 'No active space analysis found. Please run "analyze_space" first.',
+          message: 'No accessibility audit has been run yet. Please analyze a space first.',
         };
       }
 
