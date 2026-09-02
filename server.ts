@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
+import { WEBMCP_MANIFEST } from './src/webmcp/manifestData';
 
 dotenv.config();
 
@@ -41,6 +42,24 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     service: 'Drishti AI Accessibility Lens',
     hasApiKey: Boolean(process.env.GEMINI_API_KEY),
+  });
+});
+
+// WebMCP Manifest endpoint (W3C standard tool discovery)
+app.get('/api/webmcp-manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json(WEBMCP_MANIFEST);
+});
+
+// WebMCP Tools catalog endpoint
+app.get('/api/webmcp-tools', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json({
+    protocol: 'webmcp',
+    count: WEBMCP_MANIFEST.tools.length,
+    tools: WEBMCP_MANIFEST.tools,
   });
 });
 

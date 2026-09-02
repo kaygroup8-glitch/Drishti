@@ -33,6 +33,10 @@ interface ResultsDashboardProps {
   onSave: (result: AnalysisResult) => void;
   isSaved: boolean;
   onOpenAgent?: () => void;
+  selectedFindingId?: number | null;
+  onSelectFindingId?: (id: number | null) => void;
+  activeLensFilter?: string;
+  onSelectLensFilter?: (lens: string) => void;
 }
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
@@ -41,11 +45,34 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   onSave,
   isSaved,
   onOpenAgent,
+  selectedFindingId: propSelectedFindingId,
+  onSelectFindingId: propOnSelectFindingId,
+  activeLensFilter: propActiveLensFilter,
+  onSelectLensFilter: propOnSelectLensFilter,
 }) => {
-  const [selectedFindingId, setSelectedFindingId] = useState<number | null>(
+  const [internalSelectedFindingId, setInternalSelectedFindingId] = useState<number | null>(
     result.findings.length > 0 ? result.findings[0].id : null
   );
-  const [activeLensFilter, setActiveLensFilter] = useState<string>('All');
+  const [internalActiveLensFilter, setInternalActiveLensFilter] = useState<string>('All');
+
+  const selectedFindingId = propSelectedFindingId !== undefined ? propSelectedFindingId : internalSelectedFindingId;
+  const setSelectedFindingId = (id: number | null) => {
+    if (propOnSelectFindingId) {
+      propOnSelectFindingId(id);
+    } else {
+      setInternalSelectedFindingId(id);
+    }
+  };
+
+  const activeLensFilter = propActiveLensFilter !== undefined ? propActiveLensFilter : internalActiveLensFilter;
+  const setActiveLensFilter = (lens: string) => {
+    if (propOnSelectLensFilter) {
+      propOnSelectLensFilter(lens);
+    } else {
+      setInternalActiveLensFilter(lens);
+    }
+  };
+
   const [copiedLink, setCopiedLink] = useState(false);
   const [expandedCardIds, setExpandedCardIds] = useState<Set<number>>(
     () => new Set(result.findings.map((f) => f.id))
@@ -54,6 +81,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [speechStatus, setSpeechStatus] = useState(narrator.getStatus());
 
   const findingRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  // Auto-scroll and expand card when agent or user selects a barrier
+  useEffect(() => {
+    if (selectedFindingId !== null) {
+      setExpandedCardIds((prev) => new Set(prev).add(selectedFindingId));
+      const el = findingRefs.current[selectedFindingId];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedFindingId]);
 
   const toggleCardExpansion = (id: number) => {
     setExpandedCardIds((prev) => {
@@ -107,9 +145,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     }
   };
 
-  const availableLenses = [
+  const availableLenses: string[] = [
     'All',
-    ...Array.from(new Set(result.findings.map((f) => f.lens))),
+    ...(Array.from(new Set(result.findings.map((f) => f.lens))) as string[]),
   ];
 
   const filteredFindings =

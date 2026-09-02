@@ -8,6 +8,7 @@ import { createSummaryTool } from './summaryTool';
 import { createBarrierTool } from './barrierTool';
 import { createRecommendationsTool } from './recommendationsTool';
 import { createReportTool } from './reportTool';
+import { createFocusBarrierTool } from './focusBarrierTool';
 
 export * from './types';
 export { createAnalyzeSpaceTool } from './analyzeSpaceTool';
@@ -15,6 +16,7 @@ export { createSummaryTool } from './summaryTool';
 export { createBarrierTool } from './barrierTool';
 export { createRecommendationsTool } from './recommendationsTool';
 export { createReportTool } from './reportTool';
+export { createFocusBarrierTool } from './focusBarrierTool';
 
 /**
  * Global tool registry map for active session
@@ -22,32 +24,35 @@ export { createReportTool } from './reportTool';
 const registeredToolsMap = new Map<string, WebMCPToolDefinition>();
 
 /**
- * Feature detection for native or polyfilled WebMCP
+ * Feature detection for native or polyfilled WebMCP (W3C standard: navigator.modelContext)
  */
 export function isNativeWebMCPSupported(): boolean {
-  if (typeof document === 'undefined') return false;
+  if (typeof window === 'undefined') return false;
   return Boolean(
-    (document && 'modelContext' in document && typeof (document as any).modelContext?.registerTool === 'function') ||
+    (typeof navigator !== 'undefined' && 'modelContext' in navigator && typeof (navigator as any).modelContext?.registerTool === 'function') ||
     (typeof window !== 'undefined' && 'modelContext' in window && typeof (window as any).modelContext?.registerTool === 'function') ||
-    (typeof navigator !== 'undefined' && 'modelContext' in navigator && typeof (navigator as any).modelContext?.registerTool === 'function')
+    (typeof document !== 'undefined' && 'modelContext' in document && typeof (document as any).modelContext?.registerTool === 'function')
   );
 }
 
 /**
- * Initializes and registers all 5 Drishti accessibility tools with document.modelContext
+ * Initializes and registers all Drishti accessibility tools with navigator.modelContext,
+ * window.modelContext, and document.modelContext for 100% compliance across Chrome WebModelContext flag,
+ * ChatGPT in-app browser, and standard DevTools.
  */
 export function initializeWebMCP(bridge: WebMCPAppBridge): () => void {
-  if (typeof document === 'undefined' || typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return () => {};
   }
 
-  // Instantiate the 5 specialized accessibility tools
+  // Instantiate the 6 specialized accessibility tools
   const tools: WebMCPToolDefinition[] = [
     createAnalyzeSpaceTool(bridge),
     createSummaryTool(bridge),
     createBarrierTool(bridge),
     createRecommendationsTool(bridge),
     createReportTool(bridge),
+    createFocusBarrierTool(bridge),
   ];
 
   // Populate memory registry
@@ -56,49 +61,63 @@ export function initializeWebMCP(bridge: WebMCPAppBridge): () => void {
     registeredToolsMap.set(tool.name, tool);
   });
 
-  // Ensure document.modelContext exists (polyfilled safely if browser does not yet natively support it)
-  if (!document.modelContext) {
-    const modelContextImpl: ModelContext = {
-      registerTool: (toolDef: WebMCPToolDefinition) => {
-        if (!toolDef || !toolDef.name) {
-          throw new Error('WebMCP Error: tool definition must provide a valid "name".');
-        }
-        registeredToolsMap.set(toolDef.name, toolDef);
-        console.log(`[WebMCP] Tool registered: ${toolDef.name}`);
-      },
-      unregisterTool: (toolName: string) => {
-        registeredToolsMap.delete(toolName);
-      },
-      getRegisteredTools: () => Array.from(registeredToolsMap.values()),
-      executeTool: async (name: string, args: any) => {
-        const tool = registeredToolsMap.get(name);
-        if (!tool) {
-          throw new Error(`WebMCP Tool "${name}" is not registered.`);
-        }
-        return await tool.execute(args);
-      },
-    };
-
-    try {
-      Object.defineProperty(document, 'modelContext', {
-        value: modelContextImpl,
-        writable: true,
-        configurable: true,
-      });
-    } catch {
-      (document as any).modelContext = modelContextImpl;
-    }
-  }
-
-  // Register each tool into document.modelContext
-  tools.forEach((tool) => {
-    try {
-      if (document.modelContext && typeof document.modelContext.registerTool === 'function') {
-        document.modelContext.registerTool(tool);
+  // Standard ModelContext implementation
+  const modelContextImpl: ModelContext = {
+    registerTool: (toolDef: WebMCPToolDefinition) => {
+      if (!toolDef || !toolDef.name) {
+        throw new Error('WebMCP Error: tool definition must provide a valid "name".');
       }
-    } catch (err) {
-      console.warn(`[WebMCP] Failed to register tool "${tool.name}" on document.modelContext:`, err);
+      registeredToolsMap.set(toolDef.name, toolDef);
+      console.log(`[WebMCP] Tool registered: ${toolDef.name}`);
+    },
+    unregisterTool: (toolName: string) => {
+      registeredToolsMap.delete(toolName);
+    },
+    getRegisteredTools: () => Array.from(registeredToolsMap.values()),
+    executeTool: async (name: string, args: any) => {
+      const tool = registeredToolsMap.get(name);
+      if (!tool) {
+        throw new Error(`WebMCP Tool "${name}" is not registered.`);
+      }
+      return await tool.execute(args);
+    },
+  };
+
+  // Mount/augment across all target scopes (navigator, window, document)
+  const targets: Array<{ obj: any; name: string }> = [];
+  if (typeof navigator !== 'undefined') targets.push({ obj: navigator, name: 'navigator' });
+  if (typeof window !== 'undefined') targets.push({ obj: window, name: 'window' });
+  if (typeof document !== 'undefined') targets.push({ obj: document, name: 'document' });
+
+  targets.forEach(({ obj, name }) => {
+    try {
+      if (!obj.modelContext) {
+        Object.defineProperty(obj, 'modelContext', {
+          value: modelContextImpl,
+          writable: true,
+          configurable: true,
+        });
+      }
+    } catch {
+      try {
+        obj.modelContext = modelContextImpl;
+      } catch (e) {
+        console.warn(`[WebMCP] Could not attach modelContext to ${name}:`, e);
+      }
     }
+  });
+
+  // Register each tool into all available modelContext instances
+  tools.forEach((tool) => {
+    targets.forEach(({ obj, name }) => {
+      try {
+        if (obj.modelContext && typeof obj.modelContext.registerTool === 'function') {
+          obj.modelContext.registerTool(tool);
+        }
+      } catch (err) {
+        console.warn(`[WebMCP] Tool "${tool.name}" failed on ${name}.modelContext:`, err);
+      }
+    });
   });
 
   // Also expose window.drishtiWebMCP for DevTools inspection and agent testing
@@ -116,19 +135,21 @@ export function initializeWebMCP(bridge: WebMCPAppBridge): () => void {
     registeredAt: new Date().toISOString(),
   };
 
-  console.log(`[WebMCP] Drishti Agent Layer active. 5 tools registered: [${tools.map((t) => t.name).join(', ')}]`);
+  console.log(`[WebMCP] Drishti Agent Layer active on navigator.modelContext. ${tools.length} tools registered: [${tools.map((t) => t.name).join(', ')}]`);
 
   // Return cleanup unregister function
   return () => {
     tools.forEach((tool) => {
       registeredToolsMap.delete(tool.name);
-      try {
-        if (document.modelContext?.unregisterTool) {
-          document.modelContext.unregisterTool(tool.name);
+      targets.forEach(({ obj }) => {
+        try {
+          if (obj.modelContext?.unregisterTool) {
+            obj.modelContext.unregisterTool(tool.name);
+          }
+        } catch {
+          // Ignore cleanup errors
         }
-      } catch {
-        // Ignore cleanup errors
-      }
+      });
     });
   };
 }

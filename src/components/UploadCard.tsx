@@ -13,7 +13,7 @@ import { LENSES } from '../utils/lensConfig';
 import { LensId, SampleScenario } from '../types';
 import { SAMPLE_SCENARIOS } from '../data/sampleScenarios';
 import { optimizeImageForAnalysis } from '../utils/imageOptimizer';
-import { AbstractCardGraphic, GraphicTheme } from './AbstractCardGraphic';
+import darkCameraImg from '../assets/images/dark_camera_cinematic_1788379424968.jpg';
 
 interface UploadCardProps {
   onAnalyze: (imageData: { base64: string; mimeType: string; fileName: string; lenses: string[] }) => void;
@@ -167,10 +167,21 @@ export const UploadCard: React.FC<UploadCardProps> = ({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`group relative overflow-hidden rounded-[28px] bg-[#FDF0EB] border border-[#F6DDD3] p-8 sm:p-10 flex flex-col justify-between min-h-[380px] shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer ${
-                isDragging ? 'border-[#FA8F79] bg-[#FFF5F2] ring-2 ring-[#FA8F79]/30' : ''
+              className={`group relative overflow-hidden rounded-[28px] border border-white/15 hover:border-white/35 bg-[#090B0E] p-8 sm:p-10 flex flex-col justify-between min-h-[380px] shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer ${
+                isDragging ? 'border-[#FA8F79] ring-2 ring-[#FA8F79]/40' : ''
               }`}
             >
+              {/* High Quality Cinematic Background Image */}
+              <img
+                src={darkCameraImg}
+                alt="Capture Space"
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+              />
+
+              {/* Un-dimmed Subtle Gradient Overlay - keeps image bright and vivid while protecting text */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-50% to-black/10 z-0" />
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -182,22 +193,22 @@ export const UploadCard: React.FC<UploadCardProps> = ({
 
               {/* Clean Top Tag */}
               <div className="z-10 relative">
-                <span className="text-xs font-semibold text-[#8C5D50]">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-white/95 uppercase px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 inline-flex items-center shadow-sm">
                   Photo Upload
                 </span>
               </div>
 
               {/* Center Content */}
               <div className="z-10 relative my-6 space-y-3">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-white group-hover:text-[#FA8F79] transition-colors drop-shadow-md">
                   Drop image or browse
                 </h2>
-                <p className="text-xs sm:text-sm text-[#544D40] leading-relaxed max-w-[85%] sm:max-w-[78%]">
+                <p className="text-xs sm:text-sm text-[#E2DCD2] leading-relaxed max-w-[85%] sm:max-w-[78%]">
                   Upload JPG, PNG, or WEBP. Well-lit photos of thresholds, ramps, stairs, and doors provide the highest accuracy.
                 </p>
 
                 <div className="pt-3 flex flex-wrap items-center gap-3">
-                  <span className="px-5 py-2.5 rounded-xl bg-[#1A1C20] hover:bg-[#2C2E35] text-[#FAF6EE] text-xs font-bold shadow-xs transition-colors">
+                  <span className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#FAF6EE] text-[#1A1C20] text-xs font-bold shadow-md transition-colors">
                     {isOptimizing ? 'Preparing...' : 'Choose Photo'}
                   </span>
                   <button
@@ -207,7 +218,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                       e.stopPropagation();
                       onOpenLiveCamera();
                     }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F7F3EB] text-[#1A1C20] text-xs font-bold transition-colors border border-[#E5DAC8] shadow-xs cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors border border-white/20 backdrop-blur-md shadow-xs cursor-pointer"
                   >
                     <Camera className="w-4 h-4 text-[#FA8F79]" />
                     <span>Camera</span>
@@ -216,15 +227,12 @@ export const UploadCard: React.FC<UploadCardProps> = ({
               </div>
 
               {/* Bottom Action Hint */}
-              <div className="z-10 relative">
-                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+              <div className="z-10 relative pt-3 border-t border-white/10">
+                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white group-hover:text-[#FA8F79] transition-colors">
                   <span>Browse device photos</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5 text-white/70 group-hover:text-[#FA8F79]" />
                 </span>
               </div>
-
-              {/* Abstract Right-Side Geometric Shape */}
-              <AbstractCardGraphic theme="coral" />
             </div>
           ) : (
             /* Selected Preview Card */
@@ -275,45 +283,36 @@ export const UploadCard: React.FC<UploadCardProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {SAMPLE_SCENARIOS.map((sample, idx) => {
-                const sampleThemes: GraphicTheme[] = ['coral', 'stone', 'sage'];
-                const sampleBgs = ['bg-[#FDF0EB] border-[#F6DDD3]', 'bg-[#F5F2EB] border-[#E7E0D2]', 'bg-[#EEF7F2] border-[#D9ECE1]'];
-                const currentTheme = sampleThemes[idx % sampleThemes.length];
-                const currentBg = sampleBgs[idx % sampleBgs.length];
+              {SAMPLE_SCENARIOS.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  id={`quick-sample-${sample.id}`}
+                  onClick={() => onSelectSample(sample)}
+                  className="group relative overflow-hidden rounded-2xl bg-white border border-[#E5DAC8] p-4 text-left transition-all hover:shadow-sm hover:border-[#D6C4AD] cursor-pointer flex flex-col justify-between min-h-[105px]"
+                >
+                  <div className="z-10 relative space-y-1">
+                    <span className="text-[11px] font-semibold text-[#8C8475]">
+                      {sample.category}
+                    </span>
+                    <p className="text-xs font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors truncate">
+                      {sample.title}
+                    </p>
+                  </div>
 
-                return (
-                  <button
-                    key={sample.id}
-                    type="button"
-                    id={`quick-sample-${sample.id}`}
-                    onClick={() => onSelectSample(sample)}
-                    className={`group relative overflow-hidden rounded-2xl ${currentBg} border p-4 text-left transition-all hover:shadow-xs cursor-pointer flex flex-col justify-between min-h-[105px]`}
-                  >
-                    <div className="z-10 relative space-y-1">
-                      <span className="text-[11px] font-semibold text-[#8C8475]">
-                        {sample.category}
-                      </span>
-                      <p className="text-xs font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors truncate">
-                        {sample.title}
-                      </p>
-                    </div>
-
-                    <div className="z-10 relative pt-2 flex items-center justify-between text-[11px] font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
-                      <span>Score {sample.result.accessibilityScore}/100</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                    </div>
-
-                    <AbstractCardGraphic theme={currentTheme} className="absolute -right-3 -bottom-3 w-24 h-24 opacity-60 pointer-events-none" />
-                  </button>
-                );
-              })}
+                  <div className="z-10 relative pt-2 flex items-center justify-between text-[11px] font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors border-t border-[#000000]/5">
+                    <span>Score {sample.result.accessibilityScore}/100</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Right Column: Lens Settings & Trigger (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="group relative overflow-hidden rounded-[28px] bg-[#EEF7F2] border border-[#D9ECE1] p-7 sm:p-8 space-y-6 shadow-xs flex flex-col justify-between min-h-[380px]">
+          <div className="group relative overflow-hidden rounded-[28px] bg-white border border-[#E5DAC8] p-7 sm:p-8 space-y-6 shadow-xs flex flex-col justify-between min-h-[380px]">
             {/* Top Section */}
             <div className="z-10 relative space-y-1">
               <span className="text-xs font-semibold text-[#4D7C66]">
@@ -340,7 +339,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                       isSelected
                         ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
-                        : 'bg-[#FFFFFF]/90 hover:bg-[#FFFFFF] text-[#4F4A3F] border border-[#D1DFD6] hover:border-[#059669]'
+                        : 'bg-[#FAF7F0] hover:bg-[#F2ECE1] text-[#4F4A3F] border border-[#DDD3C2] hover:border-[#805D26]'
                     }`}
                   >
                     {isSelected && <Check className="w-3.5 h-3.5 text-[#FA8F79]" />}
@@ -351,7 +350,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
             </div>
 
             {/* Analysis Action Button */}
-            <div className="z-10 relative pt-4 border-t border-[#D9ECE1] space-y-3">
+            <div className="z-10 relative pt-4 border-t border-[#E5DAC8] space-y-3">
               <button
                 type="button"
                 id="reveal-barriers-btn"
@@ -360,7 +359,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                 className={`w-full py-4 rounded-2xl font-bold font-heading text-base flex items-center justify-center gap-3 transition-all shadow-md ${
                   filePreview && !isLoading
                     ? 'bg-[#1A1C20] hover:bg-[#2C2E35] text-[#FAF6EE] cursor-pointer hover:shadow-lg active:scale-[0.99]'
-                    : 'bg-[#DFEBE2] text-[#8F9F94] cursor-not-allowed'
+                    : 'bg-[#E5DAC8]/70 text-[#9E9585] cursor-not-allowed'
                 }`}
               >
                 <ScanSearch className="w-5 h-5 text-[#FA8F79]" />
@@ -368,13 +367,10 @@ export const UploadCard: React.FC<UploadCardProps> = ({
                 {filePreview && !isLoading && <ArrowRight className="w-4 h-4 text-[#9CA3AF]" />}
               </button>
 
-              <p className="text-center text-[11px] text-[#5C6E63]">
+              <p className="text-center text-[11px] text-[#736C5E]">
                 AI pinpoints obstacles with precise coordinates and practical fixes.
               </p>
             </div>
-
-            {/* Abstract Right-Side Geometric Graphic */}
-            <AbstractCardGraphic theme="sage" />
           </div>
         </div>
       </div>

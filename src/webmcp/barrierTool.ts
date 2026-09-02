@@ -54,6 +54,11 @@ export function createBarrierTool(bridge: WebMCPAppBridge): WebMCPToolDefinition
         };
       }
 
+      // Synchronize selection with human interface so the barrier pin is focused live on screen
+      if (bridge.setSelectedBarrierId) {
+        bridge.setSelectedBarrierId(finding.id);
+      }
+
       return {
         status: 'found',
         barrier: {

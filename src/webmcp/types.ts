@@ -41,6 +41,9 @@ export interface ModelContext {
 
 // Augment DOM interfaces so TypeScript compiles cleanly with document.modelContext
 declare global {
+  interface Navigator {
+    modelContext?: ModelContext;
+  }
   interface Document {
     modelContext?: ModelContext;
   }
@@ -70,6 +73,10 @@ export interface WebMCPAppBridge {
   }) => Promise<AnalysisResult>;
   triggerExportPDF: (result: AnalysisResult) => Promise<void>;
   saveToHistory: (result: AnalysisResult) => void;
+  setSelectedBarrierId?: (id: number | null) => void;
+  getSelectedBarrierId?: () => number | null;
+  setActiveLensFilter?: (lens: string) => void;
+  getActiveLensFilter?: () => string;
 }
 
 /**

@@ -1,137 +1,114 @@
 # Drishti (दृष्टि) - Universal AI Accessibility Lens
 
-> *"See beyond your own perspective."*
+> *"See beyond your own perspective."*  
+> Built for the **WebMCP Hackathon (https://webmcp.devpost.com/)**
 
-**Drishti** is an agent-native, multimodal spatial accessibility intelligence application powered by Google's Gemini Vision models and the **WebMCP (Web Model Context Protocol)** standard. It empowers humans and autonomous AI agents to audit real-world physical and sensory environments across 6 universal design lenses, discover accessibility barriers, prioritize improvements, and generate official compliance reports.
+**Drishti** is an agent-native, multimodal spatial accessibility intelligence platform powered by Google Gemini Vision models and the **W3C Web Model Context Protocol (WebMCP)** standard. It empowers humans and autonomous AI agents to audit real-world physical and sensory environments across 6 universal design lenses, discover accessibility barriers, pinpoint them with 2D coordinate markers, prioritize architectural modifications, and generate official compliance reports.
 
 ---
 
-## 🤖 WebMCP Integration (Agent-Ready Architecture)
+## 🏆 Hackathon Submission Q&A (Devpost Ready)
 
-Drishti implements the **W3C Web Model Context Protocol (WebMCP)**, exposing its specialized vision analysis, barrier detection, and report generation engines directly to AI agents via `document.modelContext.registerTool(...)`.
+### 1. What does your application do?
+Over 1.3 billion people worldwide live with significant disabilities, yet the majority of public spaces, workplaces, and commercial venues contain physical barriers (steps without ramps, lack of tactile indicators, inaccessible door thresholds, inadequate contrast) that prevent equitable access. 
 
-### Before WebMCP vs. With WebMCP
+**Drishti** bridges this gap by transforming standard smartphone or webcam photos of any built environment into an instant, multi-perspective accessibility audit. Operating across 6 universal design lenses (Mobility, Low Vision, Hearing, Cognitive Wayfinding, Elderly-Friendly, and Stroller/Reach), Drishti detects physical barriers, maps them to precise coordinate pins on the image canvas, calculates an objective 0–100 accessibility score, and generates professional PDF remediation reports.
 
-- **Before WebMCP**: A human user had to manually navigate the Drishti web interface to upload photos, adjust lens toggles, read through findings, copy remediation notes, and click to export PDF reports.
-- **With WebMCP**: An AI agent (e.g. Claude Computer Use, autonomous browser agents, workplace assistants, or building inspection bots) can directly discover and operate Drishti's accessibility toolset, collaborate in real time with the human, prioritize architectural fixes, and automate compliance audits.
+### 2. What tools does your site expose via WebMCP?
+Drishti registers **6 specialized, strongly-typed agent tools** directly into the browser's model context (`navigator.modelContext`, `window.modelContext`, and `document.modelContext`), as well as exposing a standard machine-readable manifest at `/api/webmcp-manifest.json`:
 
-### The 5 Registered WebMCP Tools
-
-Drishti exposes 5 specialized, strongly-typed tools registered under `document.modelContext`:
-
-| Tool Name | Purpose | Key Inputs | Key Outputs |
+| Tool Name | Scope & Purpose | Arguments | Outputs |
 | :--- | :--- | :--- | :--- |
-| `analyze_space` | Audits spatial photo for accessibility barriers with Gemini | `image_data` (base64/data URL), `lenses` (`mobility`, `low_vision`, `hearing`, `cognitive`, `elderly`, `stroller`, `all`) | Score (0-100), findings array, coordinate markers, remediation advice |
-| `get_accessibility_summary` | Retrieves scorecard & priority summary of the active audit without redundant Gemini calls | *(none)* | Overall score, high/med/low counts, strengths, areas needing attention, top priority fix |
-| `get_barrier_details` | Inspects a specific barrier by ID | `barrier_id` (number) | Observation, why it matters, confidence, pin location (`xPercent`, `yPercent`), recommended improvement |
-| `get_recommendations` | Retrieves prioritized action plan for property owners ("What to fix first?") | *(none)* | Ranked recommendations ordered by severity (High first), action items, impact reasoning |
-| `generate_accessibility_report` | Triggers generation and client download of official vector PDF audit report | *(none)* | Report status, file name, timestamp, score summary |
+| `analyze_space` | Multimodal physical space audit using server-side Gemini vision | `image_data` (base64/data URL), optional `lenses`, `file_name` | Overall score (0-100), findings list with 2D coordinate pins, severity levels, remediation steps |
+| `get_accessibility_summary` | Instant scorecard of the active space audit without redundant API calls | *(none)* | Overall score, rating label, high/medium/low severity counts, strong areas |
+| `get_barrier_details` | Deep-dive investigation into a specific barrier ID + synchronizes UI | `barrier_id` (number) | What was detected, why it matters, confidence, coordinates (`xPercent`, `yPercent`), recommended improvement |
+| `focus_barrier` | Direct UI co-presence: highlights barrier pin live on human canvas | `barrier_id` (number) | Focused confirmation, coordinates, pin label |
+| `get_recommendations` | Prioritized remediation roadmap for facility managers | optional `prioritizeBySeverity`, `lensFilter` | Ranked recommendations ordered by critical impact and physical feasibility |
+| `generate_accessibility_report`| Programmatic generation and client download of official vector PDF | optional `format` (`pdf` / `json`) | Report download status, file name, timestamp, score summary |
 
-### Example Agent Workflow
+### 3. Why did you pick this approach?
+Physical accessibility audits have historically required on-site specialist consultants, expensive clipboards, and weeks of delay. By exposing our multimodal inspection engine through **WebMCP**:
+1. **Agents can act as autonomous building inspectors**: An agent reviewing a commercial property listing or drone/facility photos can autonomously invoke `analyze_space`, triage barriers with `get_recommendations`, and compile official compliance paperwork with `generate_accessibility_report`.
+2. **True Human-Agent Co-Presence**: WebMCP is not just a headless API—it operates within a live webpage. When the agent inspects or calls `focus_barrier`, the human's live screen immediately highlights the pin on the visual photo, expands the relevant card, and scrolls to it. Both human and AI look at the exact same physical space simultaneously.
+3. **Structured Semantics over Screen Scraping**: Standard DOM scraping cannot understand 2D coordinates in an image, nor can it reliably parse complex architectural regulations. WebMCP gives the agent direct, typed access to clean structured representations.
 
-```
-Human provides or uploads space image / webcam snapshot
-                  ↓
-AI Agent calls `analyze_space({ image_data, lenses: ['mobility', 'elderly'] })`
-                  ↓
-Drishti processes photo via server-side Gemini Multimodal Vision API
-                  ↓
-AI Agent calls `get_accessibility_summary()` to evaluate compliance level
-                  ↓
-AI Agent inspects critical barrier: `get_barrier_details({ barrier_id: 1 })`
-                  ↓
-AI Agent answers user query: "What should the building owner fix first?" using `get_recommendations()`
-                  ↓
-AI Agent generates client report: `generate_accessibility_report()`
-```
+### 4. Walk through an example workflow.
+1. **User uploads or captures a photo** of a building entrance (or provides a photo link).
+2. **AI Agent calls** `analyze_space({ image_data: "data:image/jpeg;base64,...", lenses: ["mobility", "elderly"] })`.
+3. Drishti executes server-side Gemini multimodal vision analysis, detecting a 3-step entrance without handrails or ramp access.
+4. **AI Agent calls** `get_accessibility_summary()` to check the score (42/100, "High Remediation Priority").
+5. **AI Agent calls** `focus_barrier({ barrier_id: 1 })`: The human's browser immediately highlights pin `[1]` directly over the steps on the photo canvas and scrolls to the card.
+6. **AI Agent calls** `get_recommendations()` to formulate a contractor-ready quote and remediation sequence.
+7. **AI Agent calls** `generate_accessibility_report()`: Drishti triggers client-side generation and download of the official vector PDF audit report.
 
-### Agent Integration Code Example
+---
+
+## 🎯 How Drishti Meets the 5 Judging Criteria
+
+### 1. Thoughtful Leverage of WebMCP
+- Registered on standard `navigator.modelContext` (W3C specification / Chrome `WebModelContext` flag) with fallback polyfill.
+- Also exposes `<link rel="model-context" href="/api/webmcp-manifest.json">` and `/api/webmcp-tools` for autonomous agent crawler discovery.
+- Tools provide structured spatial, coordinate, and multi-perspective accessibility intelligence that would be impossible to obtain via plain HTML scraping.
+
+### 2. Execution & Reliability
+- Full-stack production architecture with Vite + Express + TypeScript.
+- Resilient multimodal backend with Gemini 2.5 Flash / Gemini 3.7 Flash structured JSON schemas and offline fallback fixtures.
+- 100% typed parameters and schemas conforming to JSON Schema standards (`type: "object"`, `required: [...]`, `properties: {...}`).
+- Real-time tool execution inspector built into the UI for manual testing and debugging.
+
+### 3. Real-World Impact & Usefulness
+- Targets the physical accessibility needs of 1.3+ billion people with mobility, vision, hearing, cognitive, and age-related access requirements.
+- Assists facility managers, small businesses, schools, and civic organizers in complying with the Americans with Disabilities Act (ADA Title III) and European Accessibility Act (EAA).
+
+### 4. Originality & Creativity
+- While most WebMCP demos focus on basic text forms or shopping carts, Drishti applies WebMCP to **multimodal spatial vision**, 2D image coordinate grounding, and multi-perspective empathy lenses.
+- Incorporates built-in Web Speech API voice narration for accessibility-first human interaction.
+
+### 5. Quality of the Human-Agent Experience
+- **Shared State**: WebMCP tool handlers (`analyze_space`, `focus_barrier`, `generate_accessibility_report`) invoke the exact same React state bridge used by human button clicks.
+- **Visual Co-Presence**: When an agent queries or focuses a barrier, the human sees the canvas pin pulse, the card auto-expand, and the view smoothly scroll.
+- **Human In The Loop**: The user retains full control to override filters, zoom the image canvas, re-run analysis, or narrate findings aloud.
+
+---
+
+## 💻 Developer & Testing Guide
+
+### Testing in Browser DevTools Console
+Open DevTools (`F12`) on any page of Drishti:
 
 ```javascript
-// 1. Discover registered Drishti tools
-const tools = document.modelContext.getRegisteredTools();
-console.log("Registered WebMCP Tools:", tools.map(t => t.name));
+// 1. Inspect registered tools
+console.log(navigator.modelContext.getRegisteredTools().map(t => t.name));
 
-// 2. Query summary of active scan
-const summary = await document.modelContext.executeTool("get_accessibility_summary", {});
-console.log(`Overall Score: ${summary.overallScore}/100`);
+// 2. Query summary of active audit
+const summary = await navigator.modelContext.executeTool("get_accessibility_summary", {});
+console.log(summary);
 
-// 3. Inspect top recommendations
-const recommendations = await document.modelContext.executeTool("get_recommendations", {});
-console.log("Top Priority Action:", recommendations.highestPriorityAction);
+// 3. Highlight barrier #1 live on the screen
+await navigator.modelContext.executeTool("focus_barrier", { barrier_id: 1 });
 
-// 4. Generate print-ready PDF
-const report = await document.modelContext.executeTool("generate_accessibility_report", {});
-console.log("Report generated:", report.reportFileName);
+// 4. Retrieve prioritized recommendations
+const recs = await navigator.modelContext.executeTool("get_recommendations", { prioritizeBySeverity: true });
+console.log(recs);
+
+// 5. Generate and download PDF report
+await navigator.modelContext.executeTool("generate_accessibility_report", { format: "pdf" });
 ```
 
-### How to Test WebMCP in Drishti
-
-1. Open the Drishti web application in your browser.
-2. Click the **"Agent Ready"** pill button in the top navigation bar.
-3. Switch to the **"Live Tool Inspector"** tab to test and execute any of the 5 tools live with sample or active audit data.
-4. Open the browser DevTools Console (`F12`) and inspect `document.modelContext` or `window.drishtiWebMCP`:
-   ```javascript
-   await window.drishtiWebMCP.executeTool("get_accessibility_summary", {});
-   ```
-
-### Browser & Compatibility Requirements
-
-- Drishti dynamically feature-detects native `document.modelContext`, `window.modelContext`, and `navigator.modelContext`.
-- If running in a browser without native WebMCP support, Drishti gracefully mounts a standard polyfill so the app remains 100% functional, and agents/extensions can interact with `document.modelContext` seamlessly without crashing.
+### Testing with the Built-in Agent Workspace
+1. Open the application.
+2. Click the **"Agent Assistant"** tab or the **"Agent Ready"** pill in the top navigation bar.
+3. Chat with the integrated agent using natural language (e.g. *"Analyze this space"*, *"Focus barrier 2"*, *"Find the most serious issues"*, *"Generate report"*).
+4. Watch the tool execution pills appear and the human canvas synchronize in real time.
 
 ---
 
-## 🌟 Core Application Features
+## 🛠️ Tech Stack
 
-- **Multimodal Visual Barrier Detection**: Analyzes photos of stairs, entrances, corridors, restrooms, and doorways using Gemini multimodal vision (`@google/genai`).
-- **6 Universal Design Lenses**:
-  - 🚶 **Mobility & Steps**: Detects steps without ramps, steep thresholds, and pathway obstructions.
-  - 👁️ **Low Vision & Contrast**: Evaluates luminance contrast, lighting levels, and tactile edge markers.
-  - 🦻 **Hearing & Visual Cues**: Audits redundant visual cues and visual alarms.
-  - 🧠 **Cognition & Wayfinding**: Identifies signage clutter, clarity, and intuitive directional flow.
-  - ❤️ **Elderly-Friendly**: Analyzes continuous handrails, slip risks, and rest zones.
-  - 👶 **Stroller & Reach**: Checks reach heights, pass-through clearance, and curb cuts.
-- **Interactive Visual Barrier Pin Map**: Places coordinate-calibrated marker pins (`[1]`, `[2]`, `[3]`) directly over detected barrier zones on the image canvas.
-- **Actionable Remediation Guidance**: Provides clear observations, why each barrier matters, and practical, code-compliant physical improvements.
-- **PDF Audit Report Export**: Generates professional, vector-formatted PDF accessibility reports with scorecards, priority actions, and observation summaries for printing or sharing.
-- **Voice Narration**: High-fidelity speech synthesis describing key observations and recommendations.
-- **Live Camera Mode**: Instant snapshot capture from mobile and laptop webcams.
-- **Local Persistence**: Saves analysis history locally in the browser via HTML5 localStorage with no external tracking.
-
----
-
-## 🛠️ Technology Stack
-
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Motion, Lucide Icons, jsPDF
-- **Agent Integration**: W3C Web Model Context Protocol (WebMCP), `document.modelContext`
-- **Backend / AI Engine**: Node.js, Express, `@google/genai` (Gemini 2.5 Flash / Gemini 3.7 Flash)
-- **Security**: Server-side proxy (`/api/analyze`) ensuring `GEMINI_API_KEY` is never exposed to the client or WebMCP tools.
-
----
-
-## 💻 Local Development Setup
-
-### 1. Prerequisites
-- Node.js 20+ installed
-- A Gemini API Key (get a free key at [Google AI Studio](https://aistudio.google.com/))
-
-### 2. Installation
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/drishti-accessibility-lens.git
-cd drishti-accessibility-lens
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **Start Command**: `npm run start`
+- **Client**: React 19, TypeScript, Tailwind CSS v4, Motion, Lucide Icons, jsPDF
+- **WebMCP**: W3C Web Model Context Protocol (`navigator.modelContext`, `window.modelContext`, `document.modelContext`)
+- **Backend**: Node.js, Express, `@google/genai` (Gemini 2.5 Flash / Gemini 3.7 Flash)
+- **Deployment**: Google Cloud Run / AI Studio container environment
 
 ---
 

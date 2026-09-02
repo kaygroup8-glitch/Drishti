@@ -198,7 +198,15 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
       } else if (toolName === 'get_barrier_details') {
         if (toolOutput.status === 'found' && toolOutput.barrier) {
           const b = toolOutput.barrier;
-          responseText = `Here are the deep-dive details for Barrier #${b.id} (${b.title}): Identified under the ${b.lens} lens with ${b.severity} severity.`;
+          responseText = `Here are the deep-dive details for Barrier #${b.id} (${b.title}): Identified under the ${b.lens} lens with ${b.severity} severity. I have also highlighted it on the live image canvas.`;
+          payloadType = 'barrier';
+        } else {
+          responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';
+          payloadType = 'summary';
+        }
+      } else if (toolName === 'focus_barrier') {
+        if (toolOutput.status === 'focused') {
+          responseText = `I focused and highlighted Barrier #${toolOutput.barrierId} ("${toolOutput.title}") directly on the live image canvas for you.`;
           payloadType = 'barrier';
         } else {
           responseText = toolOutput.message || 'No accessibility audit has been run yet. Please analyze a space first.';

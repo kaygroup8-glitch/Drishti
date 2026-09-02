@@ -26,16 +26,34 @@ export default function App() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
+  const [selectedFindingId, setSelectedFindingId] = useState<number | null>(null);
+  const [activeLensFilter, setActiveLensFilter] = useState<string>('All');
 
   // Ref to always provide the latest active scan result to WebMCP async tools
   const currentResultRef = useRef<AnalysisResult | null>(currentResult);
+  const selectedFindingIdRef = useRef<number | null>(selectedFindingId);
+  const activeLensFilterRef = useRef<string>(activeLensFilter);
+
   useEffect(() => {
     currentResultRef.current = currentResult;
   }, [currentResult]);
 
+  useEffect(() => {
+    selectedFindingIdRef.current = selectedFindingId;
+  }, [selectedFindingId]);
+
+  useEffect(() => {
+    activeLensFilterRef.current = activeLensFilter;
+  }, [activeLensFilter]);
+
   const updateCurrentResult = (result: AnalysisResult | null) => {
     currentResultRef.current = result;
     setCurrentResult(result);
+    if (result && result.findings && result.findings.length > 0) {
+      setSelectedFindingId(result.findings[0].id);
+    } else {
+      setSelectedFindingId(null);
+    }
   };
 
   // Load history from localStorage on initial render
@@ -129,7 +147,7 @@ export default function App() {
     }
   };
 
-  // Register WebMCP Tools with document.modelContext
+  // Register WebMCP Tools with navigator.modelContext, window.modelContext, and document.modelContext
   useEffect(() => {
     const unregister = initializeWebMCP({
       getCurrentResult: () => currentResultRef.current,
@@ -145,6 +163,14 @@ export default function App() {
       saveToHistory: (result) => {
         handleSaveResult(result);
       },
+      setSelectedBarrierId: (id) => {
+        setSelectedFindingId(id);
+      },
+      getSelectedBarrierId: () => selectedFindingIdRef.current,
+      setActiveLensFilter: (lens) => {
+        setActiveLensFilter(lens);
+      },
+      getActiveLensFilter: () => activeLensFilterRef.current,
     });
 
     return () => {
@@ -228,6 +254,10 @@ export default function App() {
             ) : currentResult ? (
               <ResultsDashboard
                 result={currentResult}
+                selectedFindingId={selectedFindingId}
+                onSelectFindingId={setSelectedFindingId}
+                activeLensFilter={activeLensFilter}
+                onSelectLensFilter={setActiveLensFilter}
                 onReset={() => {
                   updateCurrentResult(null);
                   setErrorMessage(null);

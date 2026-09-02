@@ -72,31 +72,31 @@ export const AgentReadyModal: React.FC<AgentReadyModalProps> = ({
               </span>
             </div>
             <span className="text-xs font-mono text-[#15803D] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full font-semibold">
-              5 tools ready
+              6 tools ready
             </span>
           </div>
 
           {/* Description */}
           <div className="space-y-2.5 text-xs sm:text-sm text-[#524B3F] leading-relaxed">
             <p>
-              Drishti is designed for seamless human and autonomous AI collaboration. Its accessibility inspection capabilities are registered directly into the browser&apos;s standard model context.
+              Drishti is designed for seamless human and autonomous AI collaboration. Its accessibility inspection capabilities are registered directly into the browser&apos;s standard model context via <code className="px-1.5 py-0.5 rounded bg-[#EDE3D2] font-mono text-xs text-[#1A1C20]">navigator.modelContext</code>.
             </p>
             <p>
-              When a WebMCP-compatible browser agent connects, it can autonomously request space evaluations, review detected barriers, prioritize architectural modifications, and export official reports.
+              When a WebMCP-compatible browser agent connects (such as ChatGPT&apos;s in-app browser or Chrome with <code className="px-1.5 py-0.5 rounded bg-[#EDE3D2] font-mono text-[11px] text-[#1A1C20]">--enable-features=WebModelContext</code>), it can autonomously request space evaluations, review detected barriers, highlight specific pins live on the human screen, prioritize architectural modifications, and export official reports.
             </p>
           </div>
 
           {/* Registered Capabilities 2x2 Grid */}
           <div className="space-y-2.5 pt-1">
             <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-[#6B6355]">
-              Active Agent Tools
+              Active Agent Tools (navigator.modelContext)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="p-3 rounded-2xl bg-[#FAF4EB] border border-[#ECDCC7] space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#1A1C20]">
                   <Cpu className="w-3.5 h-3.5 text-[#FA8F79]" />
-                  <span>Multimodal Auditing</span>
+                  <span>analyze_space</span>
                 </div>
                 <p className="text-[11px] text-[#6B6355] leading-relaxed">
                   Evaluates physical photos across 6 universal design lenses.
@@ -106,30 +106,30 @@ export const AgentReadyModal: React.FC<AgentReadyModalProps> = ({
               <div className="p-3 rounded-2xl bg-[#FAF4EB] border border-[#ECDCC7] space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#1A1C20]">
                   <Layers className="w-3.5 h-3.5 text-[#FA8F79]" />
-                  <span>Spatial Pinpointing</span>
+                  <span>get_barrier_details & focus_barrier</span>
                 </div>
                 <p className="text-[11px] text-[#6B6355] leading-relaxed">
-                  Retrieves precise 2D coordinate locations and severities.
+                  Retrieves 2D pin locations and focuses pins on the human screen live.
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FAF4EB] border border-[#ECDCC7] space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#1A1C20]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#FA8F79]" />
-                  <span>Prioritized Actions</span>
+                  <span>get_recommendations & summary</span>
                 </div>
                 <p className="text-[11px] text-[#6B6355] leading-relaxed">
-                  Calculates highest-impact remediation roadmaps.
+                  Calculates highest-impact remediation roadmaps and executive scorecards.
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FAF4EB] border border-[#ECDCC7] space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#1A1C20]">
                   <FileCheck className="w-3.5 h-3.5 text-[#FA8F79]" />
-                  <span>Automated PDF Reports</span>
+                  <span>generate_accessibility_report</span>
                 </div>
                 <p className="text-[11px] text-[#6B6355] leading-relaxed">
-                  Generates vector compliance summary documents.
+                  Generates vector compliance summary documents for client download.
                 </p>
               </div>
             </div>

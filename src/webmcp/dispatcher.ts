@@ -33,7 +33,25 @@ export function dispatchPromptLocally(
     };
   }
 
-  // 2. Specific Barrier Deep Dive (e.g. "barrier 2", "barrier #1", "issue 3", "finding 2")
+  // 2. Focus or Highlight Barrier on Screen
+  if (
+    lower.includes('focus') ||
+    lower.includes('highlight') ||
+    lower.includes('show on screen') ||
+    lower.includes('point to') ||
+    lower.includes('select barrier')
+  ) {
+    const focusMatch = lower.match(/(?:barrier|pin|issue|#)\s*([0-9]+)/i) || lower.match(/\b([1-9])\b/);
+    const parsedId = focusMatch ? parseInt(focusMatch[1], 10) : (context.availableBarrierIds[0] || 1);
+    const barrierId = context.availableBarrierIds.includes(parsedId) ? parsedId : (context.availableBarrierIds[0] || 1);
+    return {
+      toolName: 'focus_barrier',
+      toolArgs: { barrier_id: barrierId },
+      intent: `Focus and highlight Barrier #${barrierId} pin on the live image canvas`,
+    };
+  }
+
+  // 3. Specific Barrier Deep Dive (e.g. "barrier 2", "barrier #1", "issue 3", "finding 2")
   const barrierNumberMatch =
     lower.match(/(?:barrier|issue|finding|item|number|observation|#)\s*([0-9]+)/i) ||
     lower.match(/\b([1-9])\b/);

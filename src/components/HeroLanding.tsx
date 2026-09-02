@@ -4,10 +4,21 @@ import {
   ArrowRight,
   ShieldCheck,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { SAMPLE_SCENARIOS } from '../data/sampleScenarios';
 import { SampleScenario } from '../types';
-import { AbstractCardGraphic, GraphicTheme } from './AbstractCardGraphic';
+
+// High-quality cinematic images for cards
+import darkCameraImg from '../assets/images/dark_camera_cinematic_1788379424968.jpg';
+import visionAuditImg from '../assets/images/vision_audit_cinematic_1788379450914.jpg';
+import remediationBlueprintImg from '../assets/images/remediation_blueprint_1788379464706.jpg';
+import wheelchairRampImg from '../assets/images/wheelchair_ramp_dark_1788379479331.jpg';
+import zoomedEyeImg from '../assets/images/zoomed_eye_cinematic_1788379438441.jpg';
+import acousticSoundImg from '../assets/images/acoustic_sound_dark_1788379493995.jpg';
+import calmPathwayImg from '../assets/images/calm_mind_pathway_1788379509137.jpg';
+import elderlySupportImg from '../assets/images/elderly_support_hand_1788379523988.jpg';
+import strollerPassageImg from '../assets/images/stroller_passage_dark_1788379536597.jpg';
 
 interface HeroLandingProps {
   onStartAnalysis: () => void;
@@ -25,36 +36,28 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
     title: string;
     desc: string;
     action: string;
-    theme: GraphicTheme;
-    bg: string;
-    border: string;
+    image: string;
   }> = [
     {
       stepNumber: '01',
       title: 'Capture Any Space',
       desc: 'Take a photo of physical environments, doorways, stairways, signage, or public transit paths.',
       action: 'Start capture',
-      theme: 'coral',
-      bg: 'bg-[#FDF0EB]',
-      border: 'border-[#F6DDD3]',
+      image: darkCameraImg,
     },
     {
       stepNumber: '02',
       title: 'Multimodal Vision Audit',
       desc: 'Gemini evaluates spatial cues, physical clearance, tactile elements, and sensory clarity.',
       action: 'Explore vision',
-      theme: 'stone',
-      bg: 'bg-[#F5F2EB]',
-      border: 'border-[#E7E0D2]',
+      image: visionAuditImg,
     },
     {
       stepNumber: '03',
       title: 'Actionable Remediation',
       desc: 'Receive categorized barrier pins, severity scoring, audio narration, and exportable PDF audit reports.',
       action: 'View reports',
-      theme: 'sage',
-      bg: 'bg-[#EEF7F2]',
-      border: 'border-[#D9ECE1]',
+      image: remediationBlueprintImg,
     },
   ];
 
@@ -63,63 +66,49 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
     title: string;
     desc: string;
     action: string;
-    theme: GraphicTheme;
-    bg: string;
-    border: string;
+    image: string;
   }> = [
     {
       category: 'Physical Barriers',
       title: 'Mobility & Wheelchair',
       desc: 'Evaluates step thresholds, ramp slopes, turn radii, handrails, and passage width compliance.',
       action: 'Audit mobility',
-      theme: 'coral',
-      bg: 'bg-[#FDF0EB]',
-      border: 'border-[#F6DDD3]',
+      image: wheelchairRampImg,
     },
     {
       category: 'Sensory & Vision',
       title: 'Low Vision & Blindness',
       desc: 'Detects color contrast deficiencies, tactile ground surface indicators (TGSI), and lighting glare.',
       action: 'Audit contrast',
-      theme: 'amber',
-      bg: 'bg-[#FDF6EC]',
-      border: 'border-[#F6E9D5]',
+      image: zoomedEyeImg,
     },
     {
       category: 'Acoustic & Alerts',
       title: 'Deaf & Hard of Hearing',
       desc: 'Checks visual fire alarm indicators, acoustic reflection surfaces, and text assistive aids.',
       action: 'Audit alerts',
-      theme: 'lavender',
-      bg: 'bg-[#F2EFFC]',
-      border: 'border-[#E4DCF9]',
+      image: acousticSoundImg,
     },
     {
       category: 'Wayfinding & Clarity',
       title: 'Cognitive & Neurodiverse',
       desc: 'Identifies sensory overload, confusing iconography, uncluttered navigation, and calm zones.',
       action: 'Audit wayfinding',
-      theme: 'sage',
-      bg: 'bg-[#EEF7F2]',
-      border: 'border-[#D9ECE1]',
+      image: calmPathwayImg,
     },
     {
       category: 'Aging & Stability',
       title: 'Elderly-Friendly',
       desc: 'Reviews slip resistance, non-glare rest seating, grab rail continuous grip, and step visibility.',
       action: 'Audit stability',
-      theme: 'stone',
-      bg: 'bg-[#F5F2EB]',
-      border: 'border-[#E7E0D2]',
+      image: elderlySupportImg,
     },
     {
       category: 'Reach & Clearance',
       title: 'Stroller & Passage',
       desc: 'Checks reachable height ranges, turnaround clearances, and door opening widths.',
       action: 'Audit reach',
-      theme: 'sky',
-      bg: 'bg-[#EFF6FC]',
-      border: 'border-[#DCEDFB]',
+      image: strollerPassageImg,
     },
   ];
 
@@ -175,35 +164,43 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
             <div
               key={idx}
               onClick={onStartAnalysis}
-              className={`group relative overflow-hidden rounded-[28px] ${step.bg} ${step.border} border p-7 sm:p-8 flex flex-col justify-between min-h-[250px] sm:min-h-[270px] shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer`}
+              className="group relative overflow-hidden rounded-[28px] border border-white/15 hover:border-white/35 bg-[#090B0E] p-7 sm:p-8 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:-translate-y-1"
             >
-              {/* Clean Top Step Index */}
-              <div className="z-10 relative">
-                <span className="text-xs font-mono font-semibold tracking-wider text-[#6B6355] uppercase">
+              {/* High Quality Cinematic Image */}
+              <img
+                src={step.image}
+                alt={step.title}
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+              />
+
+              {/* Un-dimmed Subtle Gradient Overlay - keeps image bright and vivid while protecting text */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-50% to-black/10 z-0" />
+
+              {/* Top Step Index Pill */}
+              <div className="z-10 relative flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-white/95 uppercase px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-sm">
                   Step {step.stepNumber}
                 </span>
               </div>
 
               {/* Card Content */}
               <div className="z-10 relative my-4 space-y-2">
-                <h3 className="text-xl sm:text-2xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                <h3 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:text-[#FA8F79] transition-colors drop-shadow-md">
                   {step.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#544D40] leading-relaxed max-w-[85%] sm:max-w-[78%]">
+                <p className="text-xs sm:text-sm text-[#E2DCD2] leading-relaxed font-normal drop-shadow-sm max-w-[92%]">
                   {step.desc}
                 </p>
               </div>
 
               {/* Bottom Action Link */}
-              <div className="z-10 relative">
-                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+              <div className="z-10 relative pt-3 border-t border-white/10 flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white group-hover:text-[#FA8F79] transition-colors">
                   <span>{step.action}</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5 text-white/70 group-hover:text-[#FA8F79]" />
                 </span>
               </div>
-
-              {/* Abstract Right-side Geometric Art */}
-              <AbstractCardGraphic theme={step.theme} />
             </div>
           ))}
         </div>
@@ -227,35 +224,43 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
             <div
               key={idx}
               onClick={onStartAnalysis}
-              className={`group relative overflow-hidden rounded-[28px] ${lens.bg} ${lens.border} border p-7 sm:p-8 flex flex-col justify-between min-h-[240px] sm:min-h-[260px] shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer`}
+              className="group relative overflow-hidden rounded-[28px] border border-white/15 hover:border-white/35 bg-[#090B0E] p-7 sm:p-8 flex flex-col justify-between min-h-[270px] sm:min-h-[290px] shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:-translate-y-1"
             >
-              {/* Clean Category Label */}
-              <div className="z-10 relative">
-                <span className="text-xs font-semibold tracking-wide text-[#6B6355]">
+              {/* High Quality Cinematic Image */}
+              <img
+                src={lens.image}
+                alt={lens.title}
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+              />
+
+              {/* Un-dimmed Subtle Gradient Overlay - keeps image bright and vivid while protecting text */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-50% to-black/10 z-0" />
+
+              {/* Category Label */}
+              <div className="z-10 relative flex items-center justify-between">
+                <span className="text-[11px] font-semibold tracking-wide text-white/95 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-sm">
                   {lens.category}
                 </span>
               </div>
 
               {/* Card Content */}
               <div className="z-10 relative my-4 space-y-2">
-                <h3 className="text-xl sm:text-2xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                <h3 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:text-[#FA8F79] transition-colors drop-shadow-md">
                   {lens.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#544D40] leading-relaxed max-w-[85%] sm:max-w-[78%]">
+                <p className="text-xs sm:text-sm text-[#E2DCD2] leading-relaxed font-normal drop-shadow-sm max-w-[92%]">
                   {lens.desc}
                 </p>
               </div>
 
               {/* Bottom Action Link */}
-              <div className="z-10 relative">
-                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+              <div className="z-10 relative pt-3 border-t border-white/10 flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white group-hover:text-[#FA8F79] transition-colors">
                   <span>{lens.action}</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5 text-white/70 group-hover:text-[#FA8F79]" />
                 </span>
               </div>
-
-              {/* Abstract Right-side Geometric Art */}
-              <AbstractCardGraphic theme={lens.theme} />
             </div>
           ))}
         </div>
@@ -275,57 +280,48 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7">
-          {SAMPLE_SCENARIOS.map((sample, idx) => {
-            const themes: GraphicTheme[] = ['coral', 'stone', 'sage'];
-            const bgs = ['bg-[#FDF0EB] border-[#F6DDD3]', 'bg-[#F5F2EB] border-[#E7E0D2]', 'bg-[#EEF7F2] border-[#D9ECE1]'];
-            const currentTheme = themes[idx % themes.length];
-            const currentBg = bgs[idx % bgs.length];
-
-            return (
-              <div
-                key={sample.id}
-                onClick={() => onSelectSample(sample)}
-                className={`group relative overflow-hidden rounded-[28px] ${currentBg} border p-6 sm:p-7 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-5`}
-              >
-                <div className="space-y-4 z-10 relative">
-                  {/* Clean Top Meta */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#6B6355]">
-                      {sample.category}
-                    </span>
-                    <span className="text-xs font-bold text-[#1A1C20] bg-[#FFFFFF]/90 px-2.5 py-1 rounded-lg border border-[#000000]/5">
-                      Score: {sample.result.accessibilityScore}/100
-                    </span>
-                  </div>
-
-                  <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#1A1C20] border border-[#000000]/10 shadow-xs">
-                    <img
-                      src={sample.imageUrl}
-                      alt={sample.title}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
-                      {sample.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#544D40] mt-1 line-clamp-2 leading-relaxed">
-                      {sample.subtitle}
-                    </p>
-                  </div>
+          {SAMPLE_SCENARIOS.map((sample) => (
+            <div
+              key={sample.id}
+              onClick={() => onSelectSample(sample)}
+              className="group relative overflow-hidden rounded-[28px] bg-[#FFFFFF] border border-[#E5DAC8] p-6 sm:p-7 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-5 hover:border-[#D6C4AD]"
+            >
+              <div className="space-y-4 z-10 relative">
+                {/* Clean Top Meta */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#6B6355]">
+                    {sample.category}
+                  </span>
+                  <span className="text-xs font-bold text-[#1A1C20] bg-[#FAF6EE] px-2.5 py-1 rounded-lg border border-[#E5DAC8]">
+                    Score: {sample.result.accessibilityScore}/100
+                  </span>
                 </div>
 
-                <div className="pt-3 border-t border-[#000000]/10 flex items-center justify-between text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors z-10 relative">
-                  <span>View analysis</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#1A1C20] border border-[#000000]/10 shadow-xs">
+                  <img
+                    src={sample.imageUrl}
+                    alt={sample.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
 
-                <AbstractCardGraphic theme={currentTheme} />
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold font-heading text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors">
+                    {sample.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#544D40] mt-1 line-clamp-2 leading-relaxed">
+                    {sample.subtitle}
+                  </p>
+                </div>
               </div>
-            );
-          })}
+
+              <div className="pt-3 border-t border-[#000000]/10 flex items-center justify-between text-xs sm:text-sm font-bold text-[#1A1C20] group-hover:text-[#FA8F79] transition-colors z-10 relative">
+                <span>View analysis</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
