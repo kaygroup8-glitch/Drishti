@@ -182,8 +182,12 @@ CRITICAL ETHICAL FRAMING:
 
 Evaluate the image across the requested lenses: ${lensesText}.`;
 
-    // Multi-model resilience: use latest supported models directly
-    const modelCandidates = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-2.5-flash'];
+    // Multi-model resilience: fast-fail if auth error, prioritize best vision models
+    const modelCandidates = [
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+      'gemini-3.7-flash',
+    ];
     let lastError: any = null;
     let responseText: string | null = null;
 
@@ -296,8 +300,11 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
         }
       } catch (err: any) {
         lastError = err;
-        console.warn(`Model ${modelName} error on Vercel:`, err?.message || err);
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        const msg = err?.message || String(err);
+        console.warn(`Model ${modelName} error on Vercel:`, msg);
+        if (msg.includes('API_KEY_INVALID') || msg.includes('400') || msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
+          break;
+        }
       }
     }
 

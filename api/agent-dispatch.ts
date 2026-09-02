@@ -157,7 +157,7 @@ Select the best tool, construct the arguments object, and explain the goal brief
 If the prompt asks to explain a specific barrier by number (e.g. "barrier 2", "issue 1"), ALWAYS select "get_barrier_details" with that barrier_id.
 If the prompt asks for serious issues or remediation roadmap, select "get_recommendations".`;
 
-        const modelCandidates = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-2.5-flash'];
+        const modelCandidates = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.7-flash', 'gemini-3.1-pro-preview', 'gemini-3.6-flash'];
         for (const modelName of modelCandidates) {
           try {
             const aiDecision = await ai.models.generateContent({
