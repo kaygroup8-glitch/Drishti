@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AnalysisResult, SampleScenario } from '../types';
 import { executeWebMCPTool, isNativeWebMCPSupported } from '../webmcp';
+import { dispatchPromptLocally } from '../webmcp/dispatcher';
 import { SAMPLE_SCENARIOS } from '../data/sampleScenarios';
 
 interface AgentWorkspaceProps {
@@ -120,26 +121,39 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
       const availableBarrierIds = currentResult ? currentResult.findings.map((f) => f.id) : [1, 2, 3];
       const activeTitle = currentResult ? currentResult.imageName : 'Sample Space';
 
-      const dispatchRes = await fetch('/api/agent-dispatch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: textToSend,
-          hasActiveScan: Boolean(currentResult),
-          availableBarrierIds,
-          activeSpaceTitle: activeTitle,
-        }),
+      // Instant client-side deterministic resolution
+      const localResolution = dispatchPromptLocally(textToSend, {
+        hasActiveScan: Boolean(currentResult),
+        availableBarrierIds,
       });
 
-      let toolName = 'get_accessibility_summary';
-      let toolArgs: Record<string, any> = {};
-      let agentIntent = 'Executing accessibility tool';
+      let toolName = localResolution.toolName;
+      let toolArgs: Record<string, any> = { ...localResolution.toolArgs };
+      let agentIntent = localResolution.intent;
 
-      if (dispatchRes.ok) {
-        const dispatchData = await dispatchRes.json();
-        toolName = dispatchData.toolName || 'get_accessibility_summary';
-        toolArgs = dispatchData.toolArgs || {};
-        agentIntent = dispatchData.agentIntent || 'Executing WebMCP tool';
+      try {
+        const dispatchRes = await fetch('/api/agent-dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: textToSend,
+            hasActiveScan: Boolean(currentResult),
+            availableBarrierIds,
+            activeSpaceTitle: activeTitle,
+          }),
+        });
+
+        if (dispatchRes.ok) {
+          const dispatchData = await dispatchRes.json();
+          if (dispatchData.toolName) {
+            toolName = dispatchData.toolName;
+            toolArgs = dispatchData.toolArgs || toolArgs;
+            agentIntent = dispatchData.agentIntent || dispatchData.intent || agentIntent;
+          }
+        }
+      } catch (dispatchErr) {
+        // Network or serverless route error: local resolution succeeds automatically
+        console.warn('Backend dispatch skipped/failed, using client-side tool routing:', dispatchErr);
       }
 
       // If user wants to analyze and no space is active, use first sample scenario
