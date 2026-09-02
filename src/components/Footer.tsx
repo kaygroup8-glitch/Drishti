@@ -1,12 +1,13 @@
 import React from 'react';
-import { ScanEye } from 'lucide-react';
+import { ScanEye, Bot } from 'lucide-react';
 import { DrishtiLogo } from './DrishtiLogo';
 
 interface FooterProps {
-  onNavigate: (tab: 'home' | 'analyze' | 'history' | 'about') => void;
+  onNavigate: (tab: 'home' | 'analyze' | 'agent' | 'history' | 'about') => void;
+  onOpenAgentModal?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAgentModal }) => {
   return (
     <footer className="border-t border-[#EAE2D4] bg-[#F7F2E9] mt-auto text-[#635C4E]">
       <div className="max-w-7xl mx-auto px-6 sm:px-12 py-12 sm:py-16 space-y-10">
@@ -47,10 +48,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button
+                  onClick={() => onNavigate('agent')}
+                  className="hover:text-[#1A1C20] transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Bot className="w-3.5 h-3.5 text-[#FA8F79]" />
+                  <span>Drishti Agent</span>
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => onNavigate('history')}
                   className="hover:text-[#1A1C20] transition-colors cursor-pointer"
                 >
-                  Saved Scans
+                  Saved Audits
                 </button>
               </li>
               <li>
@@ -58,9 +68,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   onClick={() => onNavigate('about')}
                   className="hover:text-[#1A1C20] transition-colors cursor-pointer"
                 >
-                  About & Legal
+                  About & Principles
                 </button>
               </li>
+              {onOpenAgentModal && (
+                <li>
+                  <button
+                    onClick={onOpenAgentModal}
+                    className="hover:text-[#1A1C20] transition-colors cursor-pointer flex items-center gap-1.5 text-xs text-[#787163]"
+                  >
+                    <span>WebMCP Protocol Details</span>
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 

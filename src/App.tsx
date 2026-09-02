@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { Footer } from './components/Footer';
@@ -6,21 +6,32 @@ import { HeroLanding } from './components/HeroLanding';
 import { UploadCard } from './components/UploadCard';
 import { AnalysisLoader } from './components/AnalysisLoader';
 import { ResultsDashboard } from './components/ResultsDashboard';
+import { AgentWorkspace } from './components/AgentWorkspace';
 import { HistoryView } from './components/HistoryView';
 import { CameraModal } from './components/CameraModal';
 import { AboutLegalModal } from './components/AboutLegalModal';
+import { AgentReadyModal } from './components/AgentReadyModal';
 import { AnalysisResult, SampleScenario } from './types';
+import { initializeWebMCP } from './webmcp';
+import { exportAnalysisToPDF } from './utils/pdfExport';
 
 const STORAGE_KEY = 'drishti_analysis_history_v1';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'analyze' | 'history' | 'about'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'analyze' | 'agent' | 'history' | 'about'>('home');
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
+
+  // Ref to always provide the latest active scan result to WebMCP async tools
+  const currentResultRef = useRef<AnalysisResult | null>(currentResult);
+  useEffect(() => {
+    currentResultRef.current = currentResult;
+  }, [currentResult]);
 
   // Load history from localStorage on initial render
   useEffect(() => {
@@ -49,7 +60,7 @@ export default function App() {
     mimeType: string;
     fileName: string;
     lenses: string[];
-  }) => {
+  }): Promise<AnalysisResult> => {
     setIsLoading(true);
     setErrorMessage(null);
     setLoadingPreview(imageData.base64);
@@ -68,7 +79,7 @@ export default function App() {
       });
 
       if (!res.ok) {
-        let errMsg = "Drishti couldn't complete the analysis. Please check your Gemini API key in Vercel settings and try again.";
+        let errMsg = "Drishti couldn't complete the analysis. Please check your Gemini API key and try again.";
         try {
           const contentType = res.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
@@ -79,7 +90,7 @@ export default function App() {
             if (textData.includes('413') || textData.toLowerCase().includes('payload too large')) {
               errMsg = 'The image file size is too large. Please upload an image under 8MB.';
             } else if (textData.includes('404')) {
-              errMsg = 'API route not found. Please sync the latest commit to Vercel.';
+              errMsg = 'API route not found. Please try again.';
             }
           }
         } catch {
@@ -92,19 +103,52 @@ export default function App() {
       setCurrentResult(result);
 
       // Automatically add to history
-      const updated = [result, ...history.filter((h) => h.id !== result.id)];
-      saveToStorage(updated);
+      setHistory((prev) => {
+        const updated = [result, ...prev.filter((h) => h.id !== result.id)];
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) {
+          console.error('Failed to save history to localStorage', e);
+        }
+        return updated;
+      });
+
+      return result;
     } catch (error: any) {
       console.error('Analysis error:', error);
-      setErrorMessage(error.message || "Drishti couldn't complete the analysis. Please try again.");
+      const msg = error.message || "Drishti couldn't complete the analysis. Please try again.";
+      setErrorMessage(msg);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Register WebMCP Tools with document.modelContext
+  useEffect(() => {
+    const unregister = initializeWebMCP({
+      getCurrentResult: () => currentResultRef.current,
+      setCurrentResult: (result) => {
+        setCurrentResult(result);
+      },
+      triggerAnalysis: async (imageData) => {
+        return await handleAnalyze(imageData);
+      },
+      triggerExportPDF: async (result) => {
+        await exportAnalysisToPDF(result);
+      },
+      saveToHistory: (result) => {
+        handleSaveResult(result);
+      },
+    });
+
+    return () => {
+      unregister();
+    };
+  }, []);
+
   const handleSelectSample = (scenario: SampleScenario) => {
     setCurrentResult(scenario.result);
-    setActiveTab('analyze');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -148,6 +192,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         savedCount={history.length}
+        onOpenAgentModal={() => setIsAgentModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -159,7 +204,10 @@ export default function App() {
               setActiveTab('analyze');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            onSelectSample={handleSelectSample}
+            onSelectSample={(scenario) => {
+              handleSelectSample(scenario);
+              setActiveTab('analyze');
+            }}
             onOpenAbout={() => {
               setActiveTab('about');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -167,7 +215,7 @@ export default function App() {
           />
         )}
 
-        {/* TAB 2: ANALYZE / RESULT DASHBOARD */}
+        {/* TAB 2: ANALYZE / RESULT DASHBOARD (STUDIO) */}
         {activeTab === 'analyze' && (
           <>
             {isLoading ? (
@@ -181,12 +229,18 @@ export default function App() {
                 }}
                 onSave={handleSaveResult}
                 isSaved={isCurrentResultSaved}
+                onOpenAgent={() => {
+                  setActiveTab('agent');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
             ) : (
               <UploadCard
                 onAnalyze={handleAnalyze}
                 onOpenLiveCamera={() => setIsCameraOpen(true)}
-                onSelectSample={handleSelectSample}
+                onSelectSample={(scenario) => {
+                  handleSelectSample(scenario);
+                }}
                 isLoading={isLoading}
                 errorMessage={errorMessage}
               />
@@ -194,7 +248,26 @@ export default function App() {
           </>
         )}
 
-        {/* TAB 3: HISTORY */}
+        {/* TAB 3: AGENT WORKSPACE */}
+        {activeTab === 'agent' && (
+          <AgentWorkspace
+            currentResult={currentResult}
+            onOpenStudio={() => {
+              setActiveTab('analyze');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onSelectSample={handleSelectSample}
+            onOpenUpload={() => {
+              setCurrentResult(null);
+              setActiveTab('analyze');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenAgentInfo={() => setIsAgentModalOpen(true)}
+            onClearSpace={() => setCurrentResult(null)}
+          />
+        )}
+
+        {/* TAB 4: HISTORY */}
         {activeTab === 'history' && (
           <HistoryView
             history={history}
@@ -212,7 +285,7 @@ export default function App() {
           />
         )}
 
-        {/* TAB 4: ABOUT & LEGAL */}
+        {/* TAB 5: ABOUT & LEGAL */}
         {activeTab === 'about' && (
           <AboutLegalModal
             onStartAnalysis={() => {
@@ -230,6 +303,7 @@ export default function App() {
           setActiveTab(tab);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onOpenAgentModal={() => setIsAgentModalOpen(true)}
       />
 
       {/* Camera Live Modal */}
@@ -239,7 +313,13 @@ export default function App() {
         onCapture={handleCameraCapture}
       />
 
-      {/* Mobile Floating Bottom Dock (hidden on medium & large desktop screens) */}
+      {/* WebMCP Agent Protocol Info Modal */}
+      <AgentReadyModal
+        isOpen={isAgentModalOpen}
+        onClose={() => setIsAgentModalOpen(false)}
+      />
+
+      {/* Mobile Floating Bottom Dock */}
       <BottomNav
         activeTab={activeTab}
         setActiveTab={(tab) => {

@@ -19,7 +19,8 @@ import {
   Volume2,
   VolumeX,
   Pause,
-  Play
+  Play,
+  Bot
 } from 'lucide-react';
 import { AnalysisResult, Finding } from '../types';
 import { getLensColor, getSeverityStyle } from '../utils/lensConfig';
@@ -31,6 +32,7 @@ interface ResultsDashboardProps {
   onReset: () => void;
   onSave: (result: AnalysisResult) => void;
   isSaved: boolean;
+  onOpenAgent?: () => void;
 }
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
@@ -38,6 +40,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   onReset,
   onSave,
   isSaved,
+  onOpenAgent,
 }) => {
   const [selectedFindingId, setSelectedFindingId] = useState<number | null>(
     result.findings.length > 0 ? result.findings[0].id : null
@@ -282,6 +285,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </>
             )}
           </button>
+
+          {onOpenAgent && (
+            <button
+              id="results-ask-agent-btn"
+              onClick={onOpenAgent}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#FAF0E1] hover:bg-[#F5E6D0] border border-[#E6D4BA] text-[#1A1C20] text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Open in Drishti Agent with WebMCP"
+            >
+              <Bot className="w-3.5 h-3.5 text-[#FA8F79]" />
+              <span>Ask Agent</span>
+            </button>
+          )}
 
           <button
             id="new-analysis-btn"

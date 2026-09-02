@@ -371,6 +371,179 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
   }
 });
 
+// Natural Language Agent Dispatch Endpoint for WebMCP
+app.post('/api/agent-dispatch', async (req, res) => {
+  try {
+    const { prompt, hasActiveScan, availableBarrierIds = [], activeSpaceTitle = 'Current Space' } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required.' });
+    }
+
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Fast local rule matching
+    let matchedTool = 'get_accessibility_summary';
+    let matchedArgs: Record<string, any> = {};
+    let matchedGoal = 'Review accessibility overview';
+
+    if (
+      lowerPrompt.includes('analyze') ||
+      lowerPrompt.includes('scan') ||
+      lowerPrompt.includes('evaluate') ||
+      lowerPrompt.includes('audit') ||
+      lowerPrompt.includes('check this space')
+    ) {
+      matchedTool = 'analyze_space';
+      const detectedLenses: string[] = [];
+      if (lowerPrompt.includes('wheelchair') || lowerPrompt.includes('mobility') || lowerPrompt.includes('ramp') || lowerPrompt.includes('step')) {
+        detectedLenses.push('mobility');
+      }
+      if (lowerPrompt.includes('vision') || lowerPrompt.includes('contrast') || lowerPrompt.includes('blind') || lowerPrompt.includes('sight')) {
+        detectedLenses.push('low_vision');
+      }
+      if (lowerPrompt.includes('hearing') || lowerPrompt.includes('deaf') || lowerPrompt.includes('sound')) {
+        detectedLenses.push('hearing');
+      }
+      if (lowerPrompt.includes('cognitive') || lowerPrompt.includes('neurodiverse') || lowerPrompt.includes('wayfinding')) {
+        detectedLenses.push('cognitive');
+      }
+      if (lowerPrompt.includes('elderly') || lowerPrompt.includes('senior') || lowerPrompt.includes('aging')) {
+        detectedLenses.push('elderly');
+      }
+      if (lowerPrompt.includes('stroller') || lowerPrompt.includes('child')) {
+        detectedLenses.push('stroller');
+      }
+      matchedArgs = {
+        lenses: detectedLenses.length > 0 ? detectedLenses : ['all'],
+      };
+      matchedGoal = `Analyze space using ${detectedLenses.length > 0 ? detectedLenses.join(', ') : 'all'} accessibility lenses`;
+    } else if (
+      lowerPrompt.includes('barrier') ||
+      lowerPrompt.includes('issue') ||
+      lowerPrompt.includes('problem') ||
+      lowerPrompt.includes('finding') ||
+      lowerPrompt.includes('obstacle') ||
+      lowerPrompt.includes('explain')
+    ) {
+      // Check for specific barrier number (e.g. barrier 2, issue 1, #3)
+      const numMatch = lowerPrompt.match(/(?:barrier|issue|finding|item|number|#)\s*([0-9]+)/i) || lowerPrompt.match(/\b([1-9])\b/);
+      const barrierId = numMatch ? parseInt(numMatch[1], 10) : (availableBarrierIds[0] || 1);
+
+      if (lowerPrompt.includes('most serious') || lowerPrompt.includes('top issues') || lowerPrompt.includes('highest') || lowerPrompt.includes('all barriers')) {
+        matchedTool = 'get_recommendations';
+        matchedArgs = { prioritizeBySeverity: true };
+        matchedGoal = 'Identify the highest-severity accessibility barriers';
+      } else {
+        matchedTool = 'get_barrier_details';
+        matchedArgs = { barrier_id: barrierId };
+        matchedGoal = `Inspect barrier #${barrierId} in detail`;
+      }
+    } else if (
+      lowerPrompt.includes('recommend') ||
+      lowerPrompt.includes('fix') ||
+      lowerPrompt.includes('improve') ||
+      lowerPrompt.includes('action') ||
+      lowerPrompt.includes('priority') ||
+      lowerPrompt.includes('solution')
+    ) {
+      matchedTool = 'get_recommendations';
+      matchedArgs = { prioritizeBySeverity: true };
+      matchedGoal = 'Retrieve prioritized accessibility remediation steps';
+    } else if (
+      lowerPrompt.includes('report') ||
+      lowerPrompt.includes('pdf') ||
+      lowerPrompt.includes('export') ||
+      lowerPrompt.includes('document') ||
+      lowerPrompt.includes('compliance sheet')
+    ) {
+      matchedTool = 'generate_accessibility_report';
+      matchedArgs = { format: 'pdf', includeEvidenceAssessment: true };
+      matchedGoal = 'Generate vector compliance summary document';
+    }
+
+    const ai = getAiClient();
+    if (ai) {
+      try {
+        const routerPrompt = `You are Drishti Agent Router. A user provided this instruction for an accessibility audit toolset:
+"${prompt}"
+
+Context:
+- hasActiveScan: ${hasActiveScan}
+- activeSpaceTitle: "${activeSpaceTitle}"
+- availableBarrierIds: [${availableBarrierIds.join(', ')}]
+
+Available WebMCP Tools:
+1. "analyze_space": { "lenses": ["all"|"mobility"|"low_vision"|"hearing"|"cognitive"|"elderly"|"stroller"] } - evaluates a space photo for accessibility barriers.
+2. "get_accessibility_summary": {} - returns overall score, rating, strong areas, and areas needing attention.
+3. "get_barrier_details": { "barrier_id": number } - deep dive on a specific barrier ID (what was detected, why it matters, how to fix it).
+4. "get_recommendations": { "prioritizeBySeverity": boolean } - prioritized list of architectural modifications and fixes.
+5. "generate_accessibility_report": { "format": "pdf", "includeEvidenceAssessment": true } - creates a formal accessibility audit document.
+
+Determine which single tool is best to run, extract its exact arguments, and write a 1-sentence friendly confirmation of what the agent will do. Output JSON matching the schema.`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: routerPrompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                toolName: {
+                  type: Type.STRING,
+                  enum: [
+                    'analyze_space',
+                    'get_accessibility_summary',
+                    'get_barrier_details',
+                    'get_recommendations',
+                    'generate_accessibility_report',
+                  ],
+                },
+                toolArgs: {
+                  type: Type.OBJECT,
+                  properties: {
+                    lenses: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
+                    },
+                    barrier_id: { type: Type.INTEGER },
+                    prioritizeBySeverity: { type: Type.BOOLEAN },
+                    format: { type: Type.STRING },
+                    includeEvidenceAssessment: { type: Type.BOOLEAN },
+                  },
+                },
+                agentIntent: { type: Type.STRING },
+              },
+              required: ['toolName', 'toolArgs', 'agentIntent'],
+            },
+          },
+        });
+
+        if (response.text) {
+          const parsed = JSON.parse(response.text.trim());
+          return res.json({
+            toolName: parsed.toolName || matchedTool,
+            toolArgs: parsed.toolArgs || matchedArgs,
+            agentIntent: parsed.agentIntent || matchedGoal,
+          });
+        }
+      } catch (geminiErr) {
+        console.warn('Gemini router fallback to rule matcher:', geminiErr);
+      }
+    }
+
+    return res.json({
+      toolName: matchedTool,
+      toolArgs: matchedArgs,
+      agentIntent: matchedGoal,
+    });
+  } catch (error: any) {
+    console.error('Error in agent dispatch endpoint:', error);
+    res.status(500).json({ error: 'Agent dispatch failed.' });
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

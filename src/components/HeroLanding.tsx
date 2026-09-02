@@ -31,8 +31,8 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
   }> = [
     {
       stepNumber: '01',
-      title: 'Capture Space',
-      desc: 'Take or upload a photo of any entrance, doorway, staircase, or corridor.',
+      title: 'Capture Any Space',
+      desc: 'Take a photo of physical environments, doorways, stairways, signage, or public transit paths.',
       action: 'Start capture',
       theme: 'coral',
       bg: 'bg-[#FDF0EB]',
@@ -40,18 +40,18 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
     },
     {
       stepNumber: '02',
-      title: 'Multi-Lens Audit',
-      desc: 'Visual intelligence analyzes the environment across diverse accessibility needs.',
-      action: 'Explore lenses',
-      theme: 'lavender',
-      bg: 'bg-[#F2EFFC]',
-      border: 'border-[#E4DCF9]',
+      title: 'Multimodal Vision Audit',
+      desc: 'Gemini evaluates spatial cues, physical clearance, tactile elements, and sensory clarity.',
+      action: 'Explore vision',
+      theme: 'stone',
+      bg: 'bg-[#F5F2EB]',
+      border: 'border-[#E7E0D2]',
     },
     {
       stepNumber: '03',
-      title: 'Targeted Fixes',
-      desc: 'Receive exact spatial markers, impact notes, and practical architectural remedies.',
-      action: 'View sample report',
+      title: 'Actionable Remediation',
+      desc: 'Receive categorized barrier pins, severity scoring, audio narration, and exportable PDF audit reports.',
+      action: 'View reports',
       theme: 'sage',
       bg: 'bg-[#EEF7F2]',
       border: 'border-[#D9ECE1]',
@@ -68,45 +68,45 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
     border: string;
   }> = [
     {
-      category: 'Physical Mobility',
-      title: 'Mobility & Steps',
-      desc: 'Detects stepped thresholds, steep gradients, curb cuts, and missing ramp transitions.',
+      category: 'Physical Barriers',
+      title: 'Mobility & Wheelchair',
+      desc: 'Evaluates step thresholds, ramp slopes, turn radii, handrails, and passage width compliance.',
       action: 'Audit mobility',
       theme: 'coral',
       bg: 'bg-[#FDF0EB]',
       border: 'border-[#F6DDD3]',
     },
     {
-      category: 'Visual Acuity',
-      title: 'Low Vision & Contrast',
-      desc: 'Highlights low-contrast nosings, dim lighting, glare, and illegible signage.',
-      action: 'Audit vision',
+      category: 'Sensory & Vision',
+      title: 'Low Vision & Blindness',
+      desc: 'Detects color contrast deficiencies, tactile ground surface indicators (TGSI), and lighting glare.',
+      action: 'Audit contrast',
       theme: 'amber',
       bg: 'bg-[#FDF6EC]',
       border: 'border-[#F6E9D5]',
     },
     {
-      category: 'Sensory Feedback',
-      title: 'Hearing & Signals',
-      desc: 'Checks for visual emergency indicators and multi-sensory notification cues.',
-      action: 'Audit cues',
+      category: 'Acoustic & Alerts',
+      title: 'Deaf & Hard of Hearing',
+      desc: 'Checks visual fire alarm indicators, acoustic reflection surfaces, and text assistive aids.',
+      action: 'Audit alerts',
       theme: 'lavender',
       bg: 'bg-[#F2EFFC]',
       border: 'border-[#E4DCF9]',
     },
     {
-      category: 'Orientation',
-      title: 'Wayfinding & Signs',
-      desc: 'Assesses visual clutter, obstructed sightlines, and logical directional markers.',
+      category: 'Wayfinding & Clarity',
+      title: 'Cognitive & Neurodiverse',
+      desc: 'Identifies sensory overload, confusing iconography, uncluttered navigation, and calm zones.',
       action: 'Audit wayfinding',
       theme: 'sage',
       bg: 'bg-[#EEF7F2]',
       border: 'border-[#D9ECE1]',
     },
     {
-      category: 'Stability & Age',
-      title: 'Elderly Friendly',
-      desc: 'Evaluates continuous handrails, slip hazards, and tactile walking surfaces.',
+      category: 'Aging & Stability',
+      title: 'Elderly-Friendly',
+      desc: 'Reviews slip resistance, non-glare rest seating, grab rail continuous grip, and step visibility.',
       action: 'Audit stability',
       theme: 'stone',
       bg: 'bg-[#F5F2EB]',
@@ -137,7 +137,7 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({
         </div>
 
         {/* Primary Action Buttons */}
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <button
             id="hero-analyze-cta"
             onClick={onStartAnalysis}

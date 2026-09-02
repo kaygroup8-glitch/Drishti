@@ -1,17 +1,19 @@
 import React from 'react';
-import { ScanEye, History, Info, ArrowRight } from 'lucide-react';
+import { ScanEye, History, Info, ArrowRight, Bot } from 'lucide-react';
 import { DrishtiLogo } from './DrishtiLogo';
 
 interface NavbarProps {
-  activeTab: 'home' | 'analyze' | 'history' | 'about';
-  setActiveTab: (tab: 'home' | 'analyze' | 'history' | 'about') => void;
+  activeTab: 'home' | 'analyze' | 'agent' | 'history' | 'about';
+  setActiveTab: (tab: 'home' | 'analyze' | 'agent' | 'history' | 'about') => void;
   savedCount: number;
+  onOpenAgentModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   savedCount,
+  onOpenAgentModal,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full bg-[#FAF6EE]/95 backdrop-blur-md border-b border-[#EAE2D5]">
@@ -26,8 +28,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <DrishtiLogo size="md" />
         </button>
 
-        {/* Website Navigation Menu with spacious padding & crisp labels */}
-        <nav className="hidden md:flex items-center gap-2 bg-[#F2ECE1] p-1.5 rounded-2xl border border-[#E3D8C7]">
+        {/* Website Navigation Menu */}
+        <nav className="hidden md:flex items-center gap-1.5 bg-[#F2ECE1] p-1.5 rounded-2xl border border-[#E3D8C7]">
           <button
             id="nav-home-link"
             onClick={() => setActiveTab('home')}
@@ -43,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="nav-analyze-link"
             onClick={() => setActiveTab('analyze')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'analyze'
                 ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
                 : 'text-[#524B3F] hover:text-[#1A1C20] hover:bg-[#EAE1D2]'
@@ -54,9 +56,22 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button
+            id="nav-agent-link"
+            onClick={() => setActiveTab('agent')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'agent'
+                ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
+                : 'text-[#524B3F] hover:text-[#1A1C20] hover:bg-[#EAE1D2]'
+            }`}
+          >
+            <Bot className="w-4 h-4 text-[#FA8F79]" />
+            <span>Agent</span>
+          </button>
+
+          <button
             id="nav-history-link"
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'history'
                 ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
                 : 'text-[#524B3F] hover:text-[#1A1C20] hover:bg-[#EAE1D2]'
@@ -74,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="nav-about-link"
             onClick={() => setActiveTab('about')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'about'
                 ? 'bg-[#1A1C20] text-[#FAF6EE] shadow-xs'
                 : 'text-[#524B3F] hover:text-[#1A1C20] hover:bg-[#EAE1D2]'
@@ -85,12 +100,33 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Primary Header Action CTA */}
-        <div className="flex items-center gap-3">
+        {/* Header Actions */}
+        <div className="flex items-center gap-2.5">
+          {/* Subtle Agent Ready Status Pill */}
+          <button
+            id="nav-webmcp-agent-btn"
+            onClick={() => {
+              if (onOpenAgentModal) {
+                onOpenAgentModal();
+              } else {
+                setActiveTab('agent');
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[#FAF0E1] hover:bg-[#F5E6D0] border border-[#E6D4BA] text-[#524B3F] hover:text-[#1A1C20] transition-all cursor-pointer shadow-2xs group"
+            title="Drishti WebMCP Agent Status"
+            aria-label="WebMCP Agent Status"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            <Bot className="w-4 h-4 text-[#787163] group-hover:text-[#1A1C20] transition-colors" />
+            <span className="text-xs font-semibold tracking-tight hidden sm:inline text-[#2A261F]">
+              WebMCP Ready
+            </span>
+          </button>
+
           <button
             id="nav-scan-cta-btn"
             onClick={() => setActiveTab('analyze')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#FA8F79] hover:bg-[#F97A62] text-[#1A1C20] font-bold text-sm shadow-sm hover:shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+            className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[#FA8F79] hover:bg-[#F97A62] text-[#1A1C20] font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
           >
             <span>Scan Space</span>
             <ArrowRight className="w-4 h-4" />
