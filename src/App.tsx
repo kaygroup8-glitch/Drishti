@@ -178,9 +178,55 @@ export default function App() {
     };
   }, []);
 
+  // Synchronize remote MCP agent actions (e.g. OpenAI Agent focus_barrier) with the human browser canvas
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/active-state');
+        if (!res.ok) return;
+        const state = await res.json();
+        if (
+          isMounted &&
+          state.selectedBarrierId !== null &&
+          state.selectedBarrierId !== undefined &&
+          state.selectedBarrierId !== selectedFindingIdRef.current
+        ) {
+          setSelectedFindingId(state.selectedBarrierId);
+        }
+      } catch {
+        // quiet fallback
+      }
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   const handleSelectSample = (scenario: SampleScenario) => {
     updateCurrentResult(scenario.result);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Sync selected scenario with remote MCP server
+    fetch('/api/sync-active-state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: scenario.result.id,
+        imageName: scenario.result.imageName,
+        imageUrl: scenario.result.imageUrl,
+        accessibilityScore: scenario.result.accessibilityScore,
+        scoreLabel: scenario.result.scoreLabel,
+        strongAreas: scenario.result.strongAreas,
+        areasNeedingAttention: scenario.result.areasNeedingAttention,
+        highestPriorityImprovement: scenario.result.highestPriorityImprovement,
+        summary: scenario.result.summary,
+        findings: scenario.result.findings,
+        selectedBarrierId: scenario.result.findings[0]?.id || null,
+      }),
+    }).catch(() => {});
   };
 
   const handleSaveResult = (resultToSave: AnalysisResult) => {

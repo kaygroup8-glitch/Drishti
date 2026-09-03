@@ -78,7 +78,7 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
     payload: {
       type: 'info',
       data: {
-        toolsCount: 5,
+        toolsCount: 6,
       },
     },
   });
@@ -305,16 +305,16 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
               <span>Clear Chat</span>
             </button>
 
-            {/* WebMCP Connection Badge */}
+            {/* WebMCP & OpenAI MCP Connection Badge */}
             <button
               onClick={onOpenAgentInfo}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F0FDF4] hover:bg-[#DCFCE7] border border-[#BBF7D0] text-[#166534] transition-colors cursor-pointer"
-              title="View WebMCP Protocol Details"
+              title="View WebMCP & OpenAI MCP Protocol Details"
             >
               <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-              <span className="text-xs font-bold hidden sm:inline">WebMCP Connected</span>
+              <span className="text-xs font-bold hidden sm:inline">MCP & WebMCP Active</span>
               <span className="text-[11px] font-mono font-semibold bg-[#BBF7D0] px-1.5 py-0.2 rounded-md">
-                5 tools
+                6 tools
               </span>
             </button>
           </div>

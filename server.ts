@@ -4,11 +4,29 @@ import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { WEBMCP_MANIFEST } from './src/webmcp/manifestData';
+import {
+  handleMcpJsonRpc,
+  getOpenAiToolsFormat,
+  getMcpClientConfiguration,
+  updateActiveAuditState,
+  activeAuditState,
+} from './src/mcp/openaiMcpServer';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+// CORS headers for all incoming API & MCP requests
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id, baggage, traceparent');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Body parser with 50mb limit for high-res photo uploads
 app.use(express.json({ limit: '50mb' }));
@@ -61,6 +79,145 @@ app.get('/api/webmcp-tools', (req, res) => {
     count: WEBMCP_MANIFEST.tools.length,
     tools: WEBMCP_MANIFEST.tools,
   });
+});
+
+// ============================================================================
+// Model Context Protocol (MCP) Server Implementation (OpenAI & Anthropic Standard)
+// Reference: https://developers.openai.com/api/docs/mcp
+// ============================================================================
+
+// Active SSE connection sessions
+const sseSessions = new Map<string, express.Response>();
+
+// Server-Sent Events (SSE) Transport Endpoint: GET /api/mcp/sse & GET /mcp/sse
+const handleMcpSse = (req: express.Request, res: express.Response) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders?.();
+
+  const sessionId = 'session_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+  sseSessions.set(sessionId, res);
+
+  // Send the standard MCP initial endpoint URI event
+  res.write(`event: endpoint\ndata: /api/mcp/messages?sessionId=${sessionId}\n\n`);
+
+  // Periodic heartbeat keepalive
+  const heartbeatTimer = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch {
+      clearInterval(heartbeatTimer);
+      sseSessions.delete(sessionId);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeatTimer);
+    sseSessions.delete(sessionId);
+  });
+};
+
+app.get('/api/mcp/sse', handleMcpSse);
+app.get('/mcp/sse', handleMcpSse);
+
+// Message Handler for SSE Sessions: POST /api/mcp/messages & POST /mcp/messages
+const handleMcpMessages = async (req: express.Request, res: express.Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const sessionId = (req.query.sessionId as string) || '';
+  const sseRes = sseSessions.get(sessionId);
+
+  const rpcResponse = await handleMcpJsonRpc(req.body);
+
+  if (sseRes) {
+    try {
+      sseRes.write(`event: message\ndata: ${JSON.stringify(rpcResponse)}\n\n`);
+    } catch {
+      sseSessions.delete(sessionId);
+    }
+  }
+
+  // Also return response in HTTP body for maximum client compatibility
+  return res.json(rpcResponse);
+};
+
+app.post('/api/mcp/messages', handleMcpMessages);
+app.post('/mcp/messages', handleMcpMessages);
+
+// Direct HTTP POST / Streamable HTTP Transport: POST /api/mcp & POST /mcp
+const handleDirectMcp = async (req: express.Request, res: express.Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
+  const rpcResponse = await handleMcpJsonRpc(req.body);
+  return res.json(rpcResponse);
+};
+
+app.post('/api/mcp', handleDirectMcp);
+app.post('/mcp', handleDirectMcp);
+
+// Information & Discovery endpoint for MCP
+app.get('/api/mcp', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const host = req.get('host') || `localhost:${PORT}`;
+  const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const serverOrigin = `${protocol}://${host}`;
+
+  res.json({
+    status: 'ok',
+    protocol: 'mcp',
+    specification: 'https://developers.openai.com/api/docs/mcp',
+    name: 'Drishti Universal AI Accessibility Lens',
+    version: '1.0.0',
+    transports: {
+      sse: `${serverOrigin}/api/mcp/sse`,
+      httpPost: `${serverOrigin}/api/mcp`,
+      messages: `${serverOrigin}/api/mcp/messages`,
+    },
+    toolsCount: 6,
+    endpoints: {
+      openaiTools: `${serverOrigin}/api/openai-tools`,
+      clientConfig: `${serverOrigin}/api/mcp-config.json`,
+      activeState: `${serverOrigin}/api/active-state`,
+    },
+  });
+});
+
+// OpenAI Function Calling & Responses API Tools Format: GET /api/openai-tools
+app.get('/api/openai-tools', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json({
+    format: 'openai_chat_completions_functions',
+    tools: getOpenAiToolsFormat(),
+  });
+});
+
+// Client Configuration Generator: GET /api/mcp-config.json
+app.get('/api/mcp-config.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const host = req.get('host') || `localhost:${PORT}`;
+  const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const serverOrigin = `${protocol}://${host}`;
+  res.json(getMcpClientConfiguration(serverOrigin));
+});
+
+// Shared Active Space State Endpoint (for human-agent co-presence sync)
+app.get('/api/active-state', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json(activeAuditState);
+});
+
+app.post('/api/sync-active-state', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.body && typeof req.body === 'object') {
+    updateActiveAuditState(req.body);
+  }
+  res.json({ status: 'ok', activeAuditState });
 });
 
 // Helper for generating realistic fallback analysis if external API is unreachable
@@ -385,6 +542,21 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
           })),
         };
 
+        // Synchronize with active MCP audit state for OpenAI and Anthropic agents
+        updateActiveAuditState({
+          id: result.id,
+          imageName: result.imageName,
+          imageUrl: result.imageUrl,
+          accessibilityScore: result.accessibilityScore,
+          scoreLabel: result.scoreLabel,
+          strongAreas: result.strongAreas,
+          areasNeedingAttention: result.areasNeedingAttention,
+          highestPriorityImprovement: result.highestPriorityImprovement,
+          summary: result.summary,
+          findings: result.findings,
+          selectedBarrierId: result.findings[0]?.id || null,
+        });
+
         return res.json(result);
       }
     }
@@ -392,6 +564,19 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
     // High-fidelity fallback
     console.warn('All Gemini models encountered high demand or errors. Generating structured fallback estimate...', lastError?.message);
     const fallbackResult = generateFallbackAnalysis(fileName, finalImageUrl, selectedLenses);
+    updateActiveAuditState({
+      id: fallbackResult.id,
+      imageName: fallbackResult.imageName,
+      imageUrl: fallbackResult.imageUrl,
+      accessibilityScore: fallbackResult.accessibilityScore,
+      scoreLabel: fallbackResult.scoreLabel,
+      strongAreas: fallbackResult.strongAreas,
+      areasNeedingAttention: fallbackResult.areasNeedingAttention,
+      highestPriorityImprovement: fallbackResult.highestPriorityImprovement,
+      summary: fallbackResult.summary,
+      findings: fallbackResult.findings,
+      selectedBarrierId: fallbackResult.findings[0]?.id || null,
+    });
     return res.json(fallbackResult);
   } catch (error: any) {
     console.error('General error during Drishti accessibility analysis, recovering with fallback:', error);
@@ -400,6 +585,19 @@ Evaluate the image across the requested lenses: ${lensesText}.`;
       req.body?.imageBase64 || '',
       req.body?.selectedLenses || ['all']
     );
+    updateActiveAuditState({
+      id: safeFallback.id,
+      imageName: safeFallback.imageName,
+      imageUrl: safeFallback.imageUrl,
+      accessibilityScore: safeFallback.accessibilityScore,
+      scoreLabel: safeFallback.scoreLabel,
+      strongAreas: safeFallback.strongAreas,
+      areasNeedingAttention: safeFallback.areasNeedingAttention,
+      highestPriorityImprovement: safeFallback.highestPriorityImprovement,
+      summary: safeFallback.summary,
+      findings: safeFallback.findings,
+      selectedBarrierId: safeFallback.findings[0]?.id || null,
+    });
     return res.json(safeFallback);
   }
 });
