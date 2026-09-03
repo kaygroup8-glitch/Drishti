@@ -137,10 +137,43 @@ async def run_audit():
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      setTestOutput(JSON.stringify(data, null, 2));
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        let errDetails = `HTTP ${res.status} (${res.statusText || 'Error'})`;
+        if (contentType.includes('application/json')) {
+          try {
+            const errJson = await res.json();
+            errDetails = JSON.stringify(errJson, null, 2);
+          } catch {
+            // fall through
+          }
+        } else {
+          const rawText = await res.text();
+          if (res.status === 502 || res.status === 503 || rawText.toLowerCase().includes('the page c')) {
+            errDetails = `The server container is briefly warming up or restarting (HTTP ${res.status}). Please wait 2-3 seconds and click Execute again.`;
+          } else {
+            errDetails = `Server returned HTML/non-JSON response (HTTP ${res.status}).`;
+          }
+        }
+        setTestOutput(`Server Error:\n${errDetails}`);
+        return;
+      }
+
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        setTestOutput(JSON.stringify(data, null, 2));
+      } else {
+        const rawText = await res.text();
+        try {
+          const parsed = JSON.parse(rawText);
+          setTestOutput(JSON.stringify(parsed, null, 2));
+        } catch {
+          setTestOutput(`Notice: Received non-JSON response from server:\n${rawText.slice(0, 200)}`);
+        }
+      }
     } catch (err: any) {
-      setTestOutput(`Error testing endpoint: ${err?.message || String(err)}`);
+      setTestOutput(`Connection Error: ${err?.message || String(err)}\n(If the server container was in cold-start, please wait a couple of seconds and try again.)`);
     } finally {
       setIsExecutingTest(false);
     }
