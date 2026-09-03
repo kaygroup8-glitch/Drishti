@@ -4,6 +4,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/mcp-config.json",
+      "destination": "/api/mcp-config"
+    },
+    {
+      "source": "/api/webmcp-manifest.json",
+      "destination": "/api/webmcp-manifest"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
